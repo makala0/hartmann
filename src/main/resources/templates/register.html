@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="cs" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Registrace</title>
+</head>
+<body>
+<h1>Registrace</h1>
+
+<p th:if="${successMessage}" th:text="${successMessage}" style="color:green;"></p>
+
+<form th:action="@{/register}" th:object="${registerForm}" method="post">
+    <div>
+        <label for="email">E-mail</label>
+        <input id="email" type="email" th:field="*{email}" required>
+        <small th:if="${#fields.hasErrors('email')}" th:errors="*{email}" style="color:red;"></small>
+    </div>
+
+    <div>
+        <label for="password">Heslo</label>
+        <input id="password" type="password" th:field="*{password}" required>
+        <small th:if="${#fields.hasErrors('password')}" th:errors="*{password}" style="color:red;"></small>
+    </div>
+
+    <div>
+        <label for="confirmPassword">Potvrzení hesla</label>
+        <input id="confirmPassword" type="password" th:field="*{confirmPassword}" required>
+        <small th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}" style="color:red;"></small>
+    </div>
+
+    <button type="submit">Registrovat</button>
+</form>
+
+<p>
+    Už máte účet?
+    <a th:href="@{/login}">Přihlaste se</a>
+</p>
+</body>
+</html>

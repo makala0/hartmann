@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="cs" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+</head>
+<body>
+<h1>Vítejte v aplikaci</h1>
+<p>Jste úspěšně přihlášeni.</p>
+
+<form th:action="@{/logout}" method="post">
+    <button type="submit">Odhlásit se</button>
+</form>
+</body>
+</html>
