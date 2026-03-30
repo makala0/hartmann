@@ -3,13 +3,13 @@ package cz.amv.hartmann.service;
 import cz.amv.hartmann.domain.AppUser;
 import cz.amv.hartmann.dto.RegisterForm;
 import cz.amv.hartmann.repository.AppUserRepository;
-import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AppUserService implements UserDetailsService {
@@ -33,10 +33,25 @@ public class AppUserService implements UserDetailsService {
         appUserRepository.save(appUser);
     }
 
-    @Override
-    public UserDetails loadUserByUsername(@NonNull String username) throws UsernameNotFoundException {
-        AppUser appUser = appUserRepository.findByEmail(username)
+    public AppUser findByEmail(String email) {
+        return appUserRepository.findByEmail(email)
             .orElseThrow(() -> new UsernameNotFoundException("Uživatel nebyl nalezen."));
+    }
+
+    @Transactional
+    public void changePassword(String email, String currentPassword, String newPassword) {
+        AppUser appUser = findByEmail(email);
+
+        if (!passwordEncoder.matches(currentPassword, appUser.getPassword())) {
+            throw new IllegalArgumentException("Aktuální heslo není správné.");
+        }
+
+        appUser.setPassword(passwordEncoder.encode(newPassword));
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        AppUser appUser = findByEmail(username);
 
         return User.builder()
             .username(appUser.getEmail())

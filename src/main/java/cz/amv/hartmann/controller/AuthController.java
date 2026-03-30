@@ -1,8 +1,11 @@
 package cz.amv.hartmann.controller;
 
+import cz.amv.hartmann.dto.ChangePasswordForm;
 import cz.amv.hartmann.dto.RegisterForm;
 import cz.amv.hartmann.service.AppUserService;
 import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -62,8 +65,51 @@ public class AuthController {
     }
 
     @GetMapping("/dashboard")
-    public String dashboard() {
+    public String dashboard(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        model.addAttribute("userEmail", userDetails.getUsername());
         return "dashboard";
+    }
+
+    @GetMapping("/profile")
+    public String profile(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        model.addAttribute("userEmail", userDetails.getUsername());
+        if (!model.containsAttribute("changePasswordForm")) {
+            model.addAttribute("changePasswordForm", new ChangePasswordForm());
+        }
+        return "profile";
+    }
+
+    @PostMapping("/profile/change-password")
+    public String changePassword(
+        @AuthenticationPrincipal UserDetails userDetails,
+        @Valid @ModelAttribute ChangePasswordForm changePasswordForm,
+        BindingResult bindingResult,
+        Model model
+    ) {
+        model.addAttribute("userEmail", userDetails.getUsername());
+
+        if (!changePasswordForm.getNewPassword().equals(changePasswordForm.getConfirmNewPassword())) {
+            bindingResult.rejectValue("confirmNewPassword", "password.mismatch", "Nová hesla se neshodují.");
+        }
+
+        if (bindingResult.hasErrors()) {
+            return "profile";
+        }
+
+        try {
+            appUserService.changePassword(
+                userDetails.getUsername(),
+                changePasswordForm.getCurrentPassword(),
+                changePasswordForm.getNewPassword()
+            );
+        } catch (IllegalArgumentException ex) {
+            bindingResult.rejectValue("currentPassword", "password.invalid", ex.getMessage());
+            return "profile";
+        }
+
+        model.addAttribute("successMessage", "Heslo bylo úspěšně změněno.");
+        model.addAttribute("changePasswordForm", new ChangePasswordForm());
+        return "profile";
     }
 
     private void normalizeForm(RegisterForm registerForm) {
