@@ -2,31 +2,49 @@
 <html lang="cs" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Přihlášení</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
-<h1>Přihlášení</h1>
+<div th:replace="~{fragments/layout :: topbar(false)}"></div>
 
-<p th:if="${param.error}" style="color:red;">Neplatné přihlašovací údaje.</p>
-<p th:if="${param.logout}" style="color:green;">Byli jste odhlášeni.</p>
+<div class="container auth-layout">
+    <section class="hero-card">
+        <h1>Přihlášení</h1>
+        <p class="subtitle">Vítej zpět. Po přihlášení se dostaneš na dashboard a správu profilu.</p>
+        <ul class="feature-list">
+            <li>Bezpečné přihlášení přes Spring Security</li>
+            <li>Rychlý přístup k profilu a změně hesla</li>
+            <li>Čisté a jednoduché UI</li>
+        </ul>
+    </section>
 
-<form th:action="@{/login}" method="post">
-    <div>
-        <label for="username">E-mail</label>
-        <input id="username" type="email" name="username" required>
-    </div>
+    <section>
+        <p class="alert error" th:if="${param.error}">Neplatné přihlašovací údaje.</p>
+        <p class="alert success" th:if="${param.logout}">Byli jste odhlášeni.</p>
 
-    <div>
-        <label for="password">Heslo</label>
-        <input id="password" type="password" name="password" required>
-    </div>
+        <form class="card" th:action="@{/login}" method="post">
+            <div class="form-row">
+                <label for="username">E-mail</label>
+                <input id="username" type="email" name="username" required autocomplete="email">
+            </div>
 
-    <button type="submit">Přihlásit se</button>
-</form>
+            <div class="form-row">
+                <label for="password">Heslo</label>
+                <input id="password" type="password" name="password" required autocomplete="current-password">
+            </div>
 
-<p>
-    Nemáte účet?
-    <a th:href="@{/register}">Zaregistrujte se</a>
-</p>
+            <button type="submit">Přihlásit se</button>
+
+            <p class="hint">
+                Nemáte účet?
+                <a th:href="@{/register}">Zaregistrujte se</a>
+            </p>
+        </form>
+    </section>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
 </body>
 </html>
