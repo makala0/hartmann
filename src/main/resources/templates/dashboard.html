@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="cs" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: topbar(true)}"></div>
+
+<div class="container">
+    <section class="hero-card">
+        <h1>Dashboard</h1>
+        <p class="subtitle">Přihlášen jako <strong th:text="${userEmail}"></strong>. Tady můžeš rychle přejít na další akce.</p>
+
+        <div class="stats-grid">
+            <div class="stat">
+                <div class="label">Status</div>
+                <div class="value">Online</div>
+            </div>
+            <div class="stat">
+                <div class="label">Bezpečnost</div>
+                <div class="value">Aktivní</div>
+            </div>
+            <div class="stat">
+                <div class="label">Profil</div>
+                <div class="value">Nastaven</div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <a class="button-link" th:href="@{/profile}">Můj profil</a>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="secondary">Odhlásit se</button>
+            </form>
+        </div>
+    </section>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+</body>
+</html>
