@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="cs" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Můj profil</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: topbar(true)}"></div>
+
+<div class="container">
+    <h1>Můj profil</h1>
+    <p class="subtitle">Přihlášený uživatel: <strong th:text="${userEmail}"></strong></p>
+
+    <p class="alert success" th:if="${successMessage}" th:text="${successMessage}"></p>
+
+    <h2>Změna hesla</h2>
+    <form class="card" th:action="@{/profile/change-password}" th:object="${changePasswordForm}" method="post">
+        <div class="form-row">
+            <label for="currentPassword">Aktuální heslo</label>
+            <input id="currentPassword" type="password" th:field="*{currentPassword}" required>
+            <small th:if="${#fields.hasErrors('currentPassword')}" th:errors="*{currentPassword}" class="error"></small>
+        </div>
+
+        <div class="form-row">
+            <label for="newPassword">Nové heslo</label>
+            <input id="newPassword" type="password" th:field="*{newPassword}" required>
+            <small th:if="${#fields.hasErrors('newPassword')}" th:errors="*{newPassword}" class="error"></small>
+        </div>
+
+        <div class="form-row">
+            <label for="confirmNewPassword">Potvrzení nového hesla</label>
+            <input id="confirmNewPassword" type="password" th:field="*{confirmNewPassword}" required>
+            <small th:if="${#fields.hasErrors('confirmNewPassword')}" th:errors="*{confirmNewPassword}" class="error"></small>
+        </div>
+
+        <button type="submit">Uložit nové heslo</button>
+    </form>
+
+    <div class="actions">
+        <a class="button-link" th:href="@{/dashboard}">Zpět na dashboard</a>
+    </div>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+</body>
+</html>
