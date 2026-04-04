@@ -90,6 +90,21 @@
             <a class="button-link"
                th:if="${currentPage + 1 < totalPages}"
                th:href="@{/dashboard(page=${currentPage + 1}, q=${filter.q}, camera=${filter.camera}, result=${filter.result}, dateFrom=${filter.dateFrom}, dateTo=${filter.dateTo})}">Další</a>
+        <p class="subtitle">Přihlášen jako <strong th:text="${userEmail}"></strong>. Tady můžeš rychle přejít na další akce.</p>
+
+        <div class="stats-grid">
+            <div class="stat">
+                <div class="label">Status</div>
+                <div class="value">Online</div>
+            </div>
+            <div class="stat">
+                <div class="label">Bezpečnost</div>
+                <div class="value">Aktivní</div>
+            </div>
+            <div class="stat">
+                <div class="label">Profil</div>
+                <div class="value">Nastaven</div>
+            </div>
         </div>
 
         <div class="actions">

@@ -12,6 +12,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import cz.amv.hartmann.dto.RegisterForm;
+import cz.amv.hartmann.service.AppUserService;
+import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
@@ -31,6 +34,9 @@ public class AuthController {
     public AuthController(AppUserService appUserService, BasicRecipeService basicRecipeService) {
         this.appUserService = appUserService;
         this.basicRecipeService = basicRecipeService;
+
+    public AuthController(AppUserService appUserService) {
+        this.appUserService = appUserService;
     }
 
     @GetMapping("/register")
@@ -105,6 +111,8 @@ public class AuthController {
         model.addAttribute("currentPage", recipePage.getNumber());
         model.addAttribute("totalPages", recipePage.getTotalPages());
 
+    public String dashboard(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        model.addAttribute("userEmail", userDetails.getUsername());
         return "dashboard";
     }
 
