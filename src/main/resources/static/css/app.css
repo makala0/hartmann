@@ -232,3 +232,58 @@ button.secondary {
     font-size: 12px;
     padding: 16px;
 }
+
+select {
+    padding: 11px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    background: #fff;
+}
+
+.filter-grid {
+    margin: 18px 0;
+}
+
+@media (min-width: 860px) {
+    .filter-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .filter-grid .actions {
+        grid-column: 1 / -1;
+        margin-top: 0;
+    }
+}
+
+.table-wrap {
+    overflow-x: auto;
+    margin: 10px 0 16px;
+    padding: 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 520px;
+}
+
+th,
+td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+}
+
+thead th {
+    background: #f8fafc;
+    font-size: 13px;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.secondary-link {
+    background: #64748b;
+}

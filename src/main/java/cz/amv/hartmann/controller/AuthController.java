@@ -1,6 +1,17 @@
 package cz.amv.hartmann.controller;
 
 import cz.amv.hartmann.dto.ChangePasswordForm;
+import cz.amv.hartmann.dto.RecipeFilter;
+import cz.amv.hartmann.dto.RegisterForm;
+import cz.amv.hartmann.domain.BasicRecipe;
+import cz.amv.hartmann.service.AppUserService;
+import cz.amv.hartmann.service.BasicRecipeService;
+import jakarta.validation.Valid;
+import java.time.LocalDate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import cz.amv.hartmann.dto.RegisterForm;
 import cz.amv.hartmann.service.AppUserService;
 import jakarta.validation.Valid;
@@ -12,11 +23,17 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class AuthController {
 
     private final AppUserService appUserService;
+    private final BasicRecipeService basicRecipeService;
+
+    public AuthController(AppUserService appUserService, BasicRecipeService basicRecipeService) {
+        this.appUserService = appUserService;
+        this.basicRecipeService = basicRecipeService;
 
     public AuthController(AppUserService appUserService) {
         this.appUserService = appUserService;
@@ -65,6 +82,35 @@ public class AuthController {
     }
 
     @GetMapping("/dashboard")
+    public String dashboard(
+        @AuthenticationPrincipal UserDetails userDetails,
+        @RequestParam(defaultValue = "") String q,
+        @RequestParam(defaultValue = "") String camera,
+        @RequestParam(defaultValue = "") String result,
+        @RequestParam(required = false) LocalDate dateFrom,
+        @RequestParam(required = false) LocalDate dateTo,
+        @RequestParam(defaultValue = "0") int page,
+        Model model
+    ) {
+        RecipeFilter filter = new RecipeFilter();
+        filter.setQ(q);
+        filter.setCamera(camera);
+        filter.setResult(result);
+        filter.setDateFrom(dateFrom);
+        filter.setDateTo(dateTo);
+
+        Pageable pageable = PageRequest.of(Math.max(page, 0), 10, Sort.by("date").descending());
+        Page<BasicRecipe> recipePage = basicRecipeService.searchRecipes(filter, pageable);
+
+        model.addAttribute("userEmail", userDetails.getUsername());
+        model.addAttribute("recipePage", recipePage);
+        model.addAttribute("recipes", recipePage.getContent());
+        model.addAttribute("cameras", basicRecipeService.findAllCameras());
+        model.addAttribute("results", basicRecipeService.findAllResults());
+        model.addAttribute("filter", filter);
+        model.addAttribute("currentPage", recipePage.getNumber());
+        model.addAttribute("totalPages", recipePage.getTotalPages());
+
     public String dashboard(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         model.addAttribute("userEmail", userDetails.getUsername());
         return "dashboard";
