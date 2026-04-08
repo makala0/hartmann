@@ -287,3 +287,75 @@ thead th {
 .secondary-link {
     background: #64748b;
 }
+
+.container.wide {
+    max-width: 1700px;
+}
+
+.hero-card.compact {
+    padding: 16px;
+}
+
+.header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.header-row h1 {
+    margin: 0;
+    font-size: 36px;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.toolbar label {
+    margin: 0;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.toolbar input,
+.toolbar select {
+    min-width: 120px;
+    height: 36px;
+}
+
+.summary-cards {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.summary-card {
+    min-width: 110px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.summary-card small {
+    color: var(--muted);
+}
+
+.summary-card strong {
+    font-size: 26px;
+}
+
+h2 {
+    margin: 16px 0 10px;
+    font-size: 28px;
+}

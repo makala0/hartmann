@@ -24,19 +24,19 @@ public class BasicRecipeService {
         return basicRecipeRepository.findAll(toSpecification(filter), pageable);
     }
 
-    public List<String> findAllCameras() {
+    public List<String> findAllStatuses() {
         return basicRecipeRepository.findAll().stream()
-            .map(BasicRecipe::getCamera)
-            .filter(camera -> camera != null && !camera.isBlank())
+            .map(BasicRecipe::getResult)
+            .filter(result -> result != null && !result.isBlank())
             .distinct()
             .sorted()
             .toList();
     }
 
-    public List<String> findAllResults() {
+    public List<String> findAllTypes() {
         return basicRecipeRepository.findAll().stream()
-            .map(BasicRecipe::getResult)
-            .filter(result -> result != null && !result.isBlank())
+            .map(BasicRecipe::getRecipe)
+            .filter(type -> type != null && !type.isBlank())
             .distinct()
             .sorted()
             .toList();
@@ -46,29 +46,24 @@ public class BasicRecipeService {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            if (filter.getQ() != null && !filter.getQ().isBlank()) {
-                String likeQ = "%" + filter.getQ().trim().toLowerCase() + "%";
-                predicates.add(cb.or(
-                    cb.like(cb.lower(root.get("recipe")), likeQ),
-                    cb.like(cb.lower(root.get("EANCode")), likeQ),
-                    cb.like(cb.lower(root.get("DMCode")), likeQ)
-                ));
-            }
-
-            if (filter.getCamera() != null && !filter.getCamera().isBlank()) {
-                predicates.add(cb.equal(root.get("camera"), filter.getCamera().trim()));
-            }
-
-            if (filter.getResult() != null && !filter.getResult().isBlank()) {
-                predicates.add(cb.equal(root.get("result"), filter.getResult().trim()));
-            }
-
             if (filter.getDateFrom() != null) {
                 predicates.add(cb.greaterThanOrEqualTo(root.get("date"), filter.getDateFrom()));
             }
 
             if (filter.getDateTo() != null) {
                 predicates.add(cb.lessThanOrEqualTo(root.get("date"), filter.getDateTo()));
+            }
+
+            if (filter.getOrderNumber() != null && !filter.getOrderNumber().isBlank()) {
+                predicates.add(cb.like(cb.lower(root.get("EANCode")), "%" + filter.getOrderNumber().trim().toLowerCase() + "%"));
+            }
+
+            if (filter.getStatus() != null && !filter.getStatus().isBlank()) {
+                predicates.add(cb.equal(root.get("result"), filter.getStatus().trim()));
+            }
+
+            if (filter.getType() != null && !filter.getType().isBlank()) {
+                predicates.add(cb.equal(root.get("recipe"), filter.getType().trim()));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

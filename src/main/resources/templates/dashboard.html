@@ -3,80 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>Dashboard historie výroby</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
 <div th:replace="~{fragments/layout :: topbar(true)}"></div>
 
-<div class="container">
-    <section class="hero-card">
-        <h1>Dashboard</h1>
-        <p class="subtitle">Přihlášen jako <strong th:text="${userEmail}"></strong>. Níže můžete filtrovat záznamy BasicRecipe z databáze.</p>
+<div class="container wide">
+    <section class="hero-card compact">
+        <div class="header-row">
+            <h1>Dashboard historie výroby</h1>
+            <span class="subtitle">Operátor: <strong th:text="${userEmail}"></strong></span>
+        </div>
 
-        <form class="card filter-grid" th:action="@{/dashboard}" method="get">
-            <div class="form-row">
-                <label for="q">Recipe / EAN / DM</label>
-                <input id="q" type="text" name="q" th:value="${filter.q}" placeholder="Např. EAN kód nebo recipe text">
-            </div>
+        <form class="toolbar" th:action="@{/dashboard}" method="get">
+            <label>Od:</label>
+            <input type="date" name="dateFrom" th:value="${filter.dateFrom}">
 
-            <div class="form-row">
-                <label for="camera">Camera</label>
-                <select id="camera" name="camera">
-                    <option value="">Vše</option>
-                    <option th:each="cam : ${cameras}" th:value="${cam}" th:text="${cam}" th:selected="${cam == filter.camera}"></option>
-                </select>
-            </div>
+            <label>Do:</label>
+            <input type="date" name="dateTo" th:value="${filter.dateTo}">
 
-            <div class="form-row">
-                <label for="result">Result</label>
-                <select id="result" name="result">
-                    <option value="">Vše</option>
-                    <option th:each="res : ${results}" th:value="${res}" th:text="${res}" th:selected="${res == filter.result}"></option>
-                </select>
-            </div>
+            <label>Číslo objednávky:</label>
+            <input type="text" name="orderNumber" th:value="${filter.orderNumber}" placeholder="100245">
 
-            <div class="form-row">
-                <label for="dateFrom">Datum od</label>
-                <input id="dateFrom" type="date" name="dateFrom" th:value="${filter.dateFrom}">
-            </div>
+            <label>Status:</label>
+            <select name="status">
+                <option value="">Vše</option>
+                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}" th:selected="${s == filter.status}"></option>
+            </select>
 
-            <div class="form-row">
-                <label for="dateTo">Datum do</label>
-                <input id="dateTo" type="date" name="dateTo" th:value="${filter.dateTo}">
-            </div>
+            <label>Typ:</label>
+            <select name="type">
+                <option value="">Vše</option>
+                <option th:each="t : ${types}" th:value="${t}" th:text="${t}" th:selected="${t == filter.type}"></option>
+            </select>
 
-            <div class="actions">
-                <button type="submit">Filtrovat</button>
-                <a class="button-link secondary-link" th:href="@{/dashboard}">Reset</a>
-            </div>
+            <button type="submit">Filtrovat</button>
+            <a class="button-link secondary-link" th:href="@{/dashboard}">Reset</a>
         </form>
 
+        <div class="summary-cards">
+            <div class="summary-card"><small>Celkem řádků</small><strong th:text="${recipePage.totalElements}">0</strong></div>
+            <div class="summary-card"><small>OK</small><strong th:text="${#lists.size(recipes.?[result == 'OK'])}">0</strong></div>
+            <div class="summary-card"><small>NOK</small><strong th:text="${#lists.size(recipes.?[result == 'NOK'])}">0</strong></div>
+        </div>
+
+        <h2>Hlavní přehled (max. 10 řádků)</h2>
         <div class="table-wrap card">
             <table>
                 <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Camera</th>
-                    <th>Result</th>
-                    <th>Date</th>
-                    <th>EAN</th>
-                    <th>DM</th>
-                    <th>Recipe</th>
+                    <th>Datum a čas</th>
+                    <th>Číslo objednávky</th>
+                    <th>Status</th>
+                    <th>Typ</th>
+                    <th>Kamera</th>
+                    <th>DM kód</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr th:if="${#lists.isEmpty(recipes)}">
-                    <td colspan="7">Žádné záznamy neodpovídají filtru.</td>
+                    <td colspan="6">No content in table</td>
                 </tr>
                 <tr th:each="recipe : ${recipes}">
-                    <td th:text="${recipe.id}"></td>
-                    <td th:text="${recipe.camera}"></td>
-                    <td th:text="${recipe.result}"></td>
                     <td th:text="${recipe.date}"></td>
                     <td th:text="${recipe.EANCode}"></td>
-                    <td th:text="${recipe.DMCode}"></td>
+                    <td th:text="${recipe.result}"></td>
                     <td th:text="${recipe.recipe}"></td>
+                    <td th:text="${recipe.camera}"></td>
+                    <td th:text="${recipe.DMCode}"></td>
                 </tr>
                 </tbody>
             </table>
@@ -85,33 +80,11 @@
         <div class="actions" th:if="${totalPages > 1}">
             <a class="button-link secondary-link"
                th:if="${currentPage > 0}"
-               th:href="@{/dashboard(page=${currentPage - 1}, q=${filter.q}, camera=${filter.camera}, result=${filter.result}, dateFrom=${filter.dateFrom}, dateTo=${filter.dateTo})}">Předchozí</a>
+               th:href="@{/dashboard(page=${currentPage - 1}, dateFrom=${filter.dateFrom}, dateTo=${filter.dateTo}, orderNumber=${filter.orderNumber}, status=${filter.status}, type=${filter.type})}">Předchozí</a>
             <span>Stránka <strong th:text="${currentPage + 1}"></strong> z <strong th:text="${totalPages}"></strong></span>
             <a class="button-link"
                th:if="${currentPage + 1 < totalPages}"
-               th:href="@{/dashboard(page=${currentPage + 1}, q=${filter.q}, camera=${filter.camera}, result=${filter.result}, dateFrom=${filter.dateFrom}, dateTo=${filter.dateTo})}">Další</a>
-        <p class="subtitle">Přihlášen jako <strong th:text="${userEmail}"></strong>. Tady můžeš rychle přejít na další akce.</p>
-
-        <div class="stats-grid">
-            <div class="stat">
-                <div class="label">Status</div>
-                <div class="value">Online</div>
-            </div>
-            <div class="stat">
-                <div class="label">Bezpečnost</div>
-                <div class="value">Aktivní</div>
-            </div>
-            <div class="stat">
-                <div class="label">Profil</div>
-                <div class="value">Nastaven</div>
-            </div>
-        </div>
-
-        <div class="actions">
-            <a class="button-link" th:href="@{/profile}">Můj profil</a>
-            <form th:action="@{/logout}" method="post">
-                <button type="submit" class="secondary">Odhlásit se</button>
-            </form>
+               th:href="@{/dashboard(page=${currentPage + 1}, dateFrom=${filter.dateFrom}, dateTo=${filter.dateTo}, orderNumber=${filter.orderNumber}, status=${filter.status}, type=${filter.type})}">Další</a>
         </div>
     </section>
 </div>

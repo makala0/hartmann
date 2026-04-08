@@ -7,7 +7,9 @@ import cz.amv.hartmann.domain.BasicRecipe;
 import cz.amv.hartmann.service.AppUserService;
 import cz.amv.hartmann.service.BasicRecipeService;
 import jakarta.validation.Valid;
+
 import java.time.LocalDate;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -34,9 +36,6 @@ public class AuthController {
     public AuthController(AppUserService appUserService, BasicRecipeService basicRecipeService) {
         this.appUserService = appUserService;
         this.basicRecipeService = basicRecipeService;
-
-    public AuthController(AppUserService appUserService) {
-        this.appUserService = appUserService;
     }
 
     @GetMapping("/register")
@@ -84,32 +83,34 @@ public class AuthController {
     @GetMapping("/dashboard")
     public String dashboard(
         @AuthenticationPrincipal UserDetails userDetails,
-        @RequestParam(defaultValue = "") String q,
-        @RequestParam(defaultValue = "") String camera,
-        @RequestParam(defaultValue = "") String result,
         @RequestParam(required = false) LocalDate dateFrom,
         @RequestParam(required = false) LocalDate dateTo,
+        @RequestParam(defaultValue = "") String orderNumber,
+        @RequestParam(defaultValue = "") String status,
+        @RequestParam(defaultValue = "") String type,
         @RequestParam(defaultValue = "0") int page,
         Model model
     ) {
         RecipeFilter filter = new RecipeFilter();
-        filter.setQ(q);
-        filter.setCamera(camera);
-        filter.setResult(result);
         filter.setDateFrom(dateFrom);
         filter.setDateTo(dateTo);
+        filter.setOrderNumber(orderNumber);
+        filter.setStatus(status);
+        filter.setType(type);
 
         Pageable pageable = PageRequest.of(Math.max(page, 0), 10, Sort.by("date").descending());
         Page<BasicRecipe> recipePage = basicRecipeService.searchRecipes(filter, pageable);
-
         model.addAttribute("userEmail", userDetails.getUsername());
         model.addAttribute("recipePage", recipePage);
         model.addAttribute("recipes", recipePage.getContent());
-        model.addAttribute("cameras", basicRecipeService.findAllCameras());
-        model.addAttribute("results", basicRecipeService.findAllResults());
+        model.addAttribute("statuses", basicRecipeService.findAllStatuses());
+        model.addAttribute("types", basicRecipeService.findAllTypes());
         model.addAttribute("filter", filter);
         model.addAttribute("currentPage", recipePage.getNumber());
         model.addAttribute("totalPages", recipePage.getTotalPages());
+
+        return "dashboard";
+    }
 
     public String dashboard(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         model.addAttribute("userEmail", userDetails.getUsername());
@@ -127,10 +128,10 @@ public class AuthController {
 
     @PostMapping("/profile/change-password")
     public String changePassword(
-        @AuthenticationPrincipal UserDetails userDetails,
-        @Valid @ModelAttribute ChangePasswordForm changePasswordForm,
-        BindingResult bindingResult,
-        Model model
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @ModelAttribute ChangePasswordForm changePasswordForm,
+            BindingResult bindingResult,
+            Model model
     ) {
         model.addAttribute("userEmail", userDetails.getUsername());
 
@@ -144,9 +145,9 @@ public class AuthController {
 
         try {
             appUserService.changePassword(
-                userDetails.getUsername(),
-                changePasswordForm.getCurrentPassword(),
-                changePasswordForm.getNewPassword()
+                    userDetails.getUsername(),
+                    changePasswordForm.getCurrentPassword(),
+                    changePasswordForm.getNewPassword()
             );
         } catch (IllegalArgumentException ex) {
             bindingResult.rejectValue("currentPassword", "password.invalid", ex.getMessage());
