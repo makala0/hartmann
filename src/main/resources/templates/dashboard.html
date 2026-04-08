@@ -27,7 +27,7 @@
             <input type="text" name="orderNumber" th:value="${filter.orderNumber}" placeholder="100245">
 
             <label>Status:</label>
-            <select name="status">
+            <select name="status">;
                 <option value="">Vše</option>
                 <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}" th:selected="${s == filter.status}"></option>
             </select>
@@ -44,8 +44,8 @@
 
         <div class="summary-cards">
             <div class="summary-card"><small>Celkem řádků</small><strong th:text="${recipePage.totalElements}">0</strong></div>
-            <div class="summary-card"><small>OK</small><strong th:text="${#lists.size(recipes.?[result == 'OK'])}">0</strong></div>
-            <div class="summary-card"><small>NOK</small><strong th:text="${#lists.size(recipes.?[result == 'NOK'])}">0</strong></div>
+            <div class="summary-card"><small>OK</small><strong th:text="${okCount}">0</strong></div>
+            <div class="summary-card"><small>NOK</small><strong th:text="${nokCount}">0</strong></div>
         </div>
 
         <h2>Hlavní přehled (max. 10 řádků)</h2>

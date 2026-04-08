@@ -36,5 +36,5 @@ public class BasicRecipe {
     @Column(nullable = false)
     private String recipe;
 
-    private byte[] image;
+    private String image;
 }

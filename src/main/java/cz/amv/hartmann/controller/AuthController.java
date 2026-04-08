@@ -9,14 +9,12 @@ import cz.amv.hartmann.service.BasicRecipeService;
 import jakarta.validation.Valid;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import cz.amv.hartmann.dto.RegisterForm;
-import cz.amv.hartmann.service.AppUserService;
-import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
@@ -103,17 +101,20 @@ public class AuthController {
         model.addAttribute("userEmail", userDetails.getUsername());
         model.addAttribute("recipePage", recipePage);
         model.addAttribute("recipes", recipePage.getContent());
+        model.addAttribute(
+            "okCount",
+            recipePage.getContent().stream().filter(recipe -> Objects.equals("OK", recipe.getResult())).count()
+        );
+        model.addAttribute(
+            "nokCount",
+            recipePage.getContent().stream().filter(recipe -> Objects.equals("NOK", recipe.getResult())).count()
+        );
         model.addAttribute("statuses", basicRecipeService.findAllStatuses());
         model.addAttribute("types", basicRecipeService.findAllTypes());
         model.addAttribute("filter", filter);
         model.addAttribute("currentPage", recipePage.getNumber());
         model.addAttribute("totalPages", recipePage.getTotalPages());
 
-        return "dashboard";
-    }
-
-    public String dashboard(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        model.addAttribute("userEmail", userDetails.getUsername());
         return "dashboard";
     }
 
