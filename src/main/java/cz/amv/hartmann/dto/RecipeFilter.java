@@ -11,7 +11,9 @@ public class RecipeFilter {
 
     private LocalDate dateFrom;
     private LocalDate dateTo;
-    private String orderNumber;
+    private String eanCode;
+    private String dmCode;
+    private String camera;
     private String status;
     private String type;
 }
