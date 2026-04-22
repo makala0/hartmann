@@ -1,9 +1,10 @@
 package cz.amv.hartmann.controller;
 
+import cz.amv.hartmann.domain.Item;
+import cz.amv.hartmann.domain.Order;
 import cz.amv.hartmann.dto.*;
-import cz.amv.hartmann.domain.BasicRecipe;
 import cz.amv.hartmann.service.AppUserService;
-import cz.amv.hartmann.service.BasicRecipeService;
+import cz.amv.hartmann.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -27,9 +29,7 @@ import java.util.Map;
 public class ApiController {
 
     private final AppUserService appUserService;
-    private final BasicRecipeService basicRecipeService;
-
-    // ===== AUTH ENDPOINTS =====
+    private final OrderService orderService;
 
     @PostMapping("/auth/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterForm registerForm) {
@@ -69,31 +69,29 @@ public class ApiController {
         }
     }
 
-    // ===== DASHBOARD ENDPOINTS =====
-
-    @GetMapping("/dashboard/recipes")
+    @GetMapping("/dashboard/orders")
     public ResponseEntity<?> getRecipes(
             @RequestParam(required = false) LocalDate dateFrom,
             @RequestParam(required = false) LocalDate dateTo,
-            @RequestParam(defaultValue = "") String eanCode,
-            @RequestParam(defaultValue = "") String dmCode,
-            @RequestParam(defaultValue = "") String camera,
-            @RequestParam(defaultValue = "") String status,
-            @RequestParam(defaultValue = "") String type,
+            @RequestParam(defaultValue = "") String lineType,
+            @RequestParam(defaultValue = "0") Long orderId,
+            @RequestParam(defaultValue = "0") Long orderNumber,
+            @RequestParam(defaultValue = "") String sku,
+            @RequestParam(defaultValue = "") String ref,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        RecipeFilter filter = new RecipeFilter();
-        filter.setDateFrom(dateFrom);
-        filter.setDateTo(dateTo);
-        filter.setEanCode(eanCode);
-        filter.setDmCode(dmCode);
-        filter.setCamera(camera);
-        filter.setStatus(status);
-        filter.setType(type);
+        OrderFilter orderFilter = new OrderFilter();
+        orderFilter.setLineType(lineType);
+        orderFilter.setOrderId(orderId);
+        orderFilter.setOrderNumber(orderNumber);
+        orderFilter.setDateFrom(dateFrom);
+        orderFilter.setDateTo(dateTo);
+        orderFilter.setSku(sku);
+        orderFilter.setRef(ref);
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("startTime").descending());
-        Page<BasicRecipe> recipePage = basicRecipeService.searchRecipes(filter, pageable);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("orderBeginDate").descending());
+        Page<Order> recipePage = this.orderService.searchRecipes(orderFilter, pageable);
 
         Map<String, Object> response = new HashMap<>();
         response.put("content", recipePage.getContent());
@@ -106,40 +104,69 @@ public class ApiController {
     }
 
     @GetMapping("/dashboard/stats")
-    public ResponseEntity<?> getStats() {
-        Page<BasicRecipe> allRecipes = basicRecipeService.searchRecipes(
-                new RecipeFilter(),
-                PageRequest.of(0, Integer.MAX_VALUE)
-        );
+    public ResponseEntity<?> getDashboardStats() {
+        Map<String, Object> stats = orderService.getDashboardStats();
+        return ResponseEntity.ok(stats);
+    }
 
-        int okCount = allRecipes.getContent().stream()
-                .mapToInt(r -> r.getOkCount() != null ? r.getOkCount() : 0)
-                .sum();
+    @GetMapping("/dashboard/order/{id}")
+    public ResponseEntity<?> getOrderDetail(@PathVariable Long id) {
+        try {
+            OrderDetailDto detail = this.orderService.getOrderDetail(id);
+            return ResponseEntity.ok(detail);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
-        int nokCount = allRecipes.getContent().stream()
-                .mapToInt(r -> r.getNokCount() != null ? r.getNokCount() : 0)
-                .sum();
+    @GetMapping("/dashboard/order/{id}/items")
+    public ResponseEntity<?> getOrderItems(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "") String defectType,
+            @RequestParam(defaultValue = "") String totalResult,
+            @RequestParam(required = false) Integer cameraNumber,
+            @RequestParam(required = false) LocalDate dateFrom,
+            @RequestParam(required = false) LocalDate dateTo,
+            @RequestParam(defaultValue = "") String serialNumber,
+            @RequestParam(defaultValue = "") String itemId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        ItemFilter filter = new ItemFilter();
+        filter.setDefectType(defectType);
+        filter.setTotalResult(totalResult);
+        filter.setCameraNumber(cameraNumber);
+        filter.setDateFrom(dateFrom);
+        filter.setDateTo(dateTo);
+        filter.setSerialNumber(serialNumber);
+        filter.setItemId(itemId);
 
-        return ResponseEntity.ok(Map.of(
-                "okCount", okCount,
-                "nokCount", nokCount,
-                "totalRecipes", allRecipes.getTotalElements()
-        ));
+        Pageable pageable = PageRequest.of(page, size, Sort.by("endInspectionTime").descending());
+        Page<Item> itemPage = this.orderService.searchItemsInOrder(id, filter, pageable);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", itemPage.getContent());
+        response.put("totalElements", itemPage.getTotalElements());
+        response.put("totalPages", itemPage.getTotalPages());
+        response.put("currentPage", itemPage.getNumber());
+        response.put("size", itemPage.getSize());
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/dashboard/filters")
     public ResponseEntity<?> getFilterOptions() {
         return ResponseEntity.ok(Map.of(
-                "cameras", basicRecipeService.findAllCameras(),
-                "statuses", basicRecipeService.findAllStatuses(),
-                "types", basicRecipeService.findAllTypes()
+                "cameras", List.of("Kamera 1", "Kamera 2", "Kamera 3", "Kamera 4"),
+                "statuses", List.of("OK", "NOK", "ERROR"),
+                "types", orderService.findAllTypes()
         ));
     }
 
-    @GetMapping("/dashboard/batch/{id}")
-    public ResponseEntity<?> getBatchDetail(@PathVariable Long id) {
+    @GetMapping("/dashboard/orderDetailWithItems/{id}")
+    public ResponseEntity<?> getOrderDetailWithItems(@PathVariable Long id) {
         try {
-            BatchDetailDto detail = basicRecipeService.getBatchDetail(id);
+            OrderDetailWithItemsDto detail = this.orderService.getOrderDetailWithItems(id);
             return ResponseEntity.ok(detail);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();

@@ -1,12 +1,74 @@
-export interface Recipe {
+
+export interface Order {
     id: number;
-    startTime: string;
-    batchId: string;
-    specification: string;
+    orderId: string;
+    orderNumber: string;
+    orderBeginDate: string;
+    lineType: string;
+    sku: string;
+    ref: string;
     okCount: number;
     nokCount: number;
+    reworkCount: number;
     totalCount: number;
-    successRate: number;
+    okPercentage: number;
+}
+
+export interface Item {
+    id: number;
+    itemId: string;
+    serialNumber: string;
+    endInspectionTime: string;
+    sku: string;
+    ref: string;
+    orderNumber: string;
+    orderId: string;
+    cameraNumber: number;
+    defectType: string;
+    totalResult: string;
+    station1Result: string;
+    station2Result: string;
+    station3Result: string;
+    station1ImagePath: string;
+    station2ImagePath: string;
+    station3ImagePath: string;
+}
+
+export interface OrderDetailWithItems {
+    id: number;
+    orderId: string;
+    orderNumber: string;
+    ref: string;
+    sku: string;
+    okCount: number;
+    nokCount: number;
+    reworkCount: number;
+    totalCount: number;
+    okPercentage: number;
+    orderBeginDate: string;
+    lineType: string;
+    items: Item[];
+}
+
+export interface OrderDetailDto {
+    order: Order;
+    items: Item[];
+    totalItems: number;
+    okItems: number;
+    nokItems: number;
+    reworkItems: number;
+}
+
+export interface ItemFilter {
+    defectType?: string;
+    totalResult?: string;
+    cameraNumber?: number;
+    dateFrom?: string;
+    dateTo?: string;
+    serialNumber?: string;
+    itemId?: string;
+    page?: number;
+    size?: number;
 }
 
 export interface DashboardStats {
@@ -20,46 +82,14 @@ export interface User {
     authorities: string[];
 }
 
-export interface RecipeFilter {
+export interface OrderFilter {
+    lineType?: string;
+    orderId?: number;
+    orderNumber?: number;
     dateFrom?: string;
     dateTo?: string;
-    dmCode?: string;
-    status?: string;
+    sku?: string;
+    ref?: string;
     page?: number;
     size?: number;
-}
-
-// Nové typy pro BatchDetail
-export interface Product {
-    id: number;
-    productId: string;
-    dmCode: string;
-    eanCode: string;
-    timestamp: string;
-    status: string;
-    stationResults: StationResult[];
-}
-
-export interface StationResult {
-    id: number;
-    station: string;
-    result: string;
-    timestamp: string;
-    defects: Defect[];
-}
-
-export interface Defect {
-    id: number;
-    defectType: string;
-    severity: string;
-    description: string;
-    imagePath?: string;
-}
-
-export interface BatchDetailDto {
-    recipe: Recipe;
-    products: Product[];
-    totalProducts: number;
-    okProducts: number;
-    nokProducts: number;
 }

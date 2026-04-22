@@ -124,7 +124,7 @@ const Register: React.FC = () => {
                     </Form.Item>
 
                     <div style={{ textAlign: 'center' }}>
-                        <a onClick={() => navigate('/login')}>Už máte účet? Přihlaste se</a>
+                        <a onClick={() => navigate('/login')}>Přihlásit se</a>
                     </div>
                 </Form>
             </Card>

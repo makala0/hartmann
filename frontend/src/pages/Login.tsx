@@ -67,7 +67,7 @@ const Login: React.FC = () => {
                     </Form.Item>
 
                     <div style={{ textAlign: 'center' }}>
-                        <a onClick={() => navigate('/register')}>Nemáte účet? Zaregistrujte se</a>
+                        <a onClick={() => navigate('/register')}>Zaregistrovat nový účet</a>
                     </div>
                 </Form>
             </Card>
