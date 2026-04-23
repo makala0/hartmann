@@ -42,13 +42,19 @@ const App: React.FC = () => {
         <ConfigProvider locale={csCS}>
             <BrowserRouter>
                 <Routes>
-                    <Route path="/login" element={<Login />} />
+                    <Route
+                        path="/login"
+                        element={<Login onLogin={async () => {
+                            const response = await apiClient.get('/auth/me');
+                            setUser(response.data);
+                        }} />}
+                    />
                     <Route path="/register" element={<Register />} />
                     <Route
                         path="/dashboard"
                         element={
                             <PrivateRoute user={user}>
-                                <MainLayout user={user || undefined}>
+                                <MainLayout user={user || undefined} onLogout={() => setUser(null)}>
                                     <Dashboard />
                                 </MainLayout>
                             </PrivateRoute>
@@ -58,7 +64,7 @@ const App: React.FC = () => {
                         path="/dashboard/:id"
                         element={
                             <PrivateRoute user={user}>
-                                <MainLayout user={user || undefined}>
+                                <MainLayout user={user || undefined} onLogout={() => setUser(null)}>
                                     <OrderDetail />
                                 </MainLayout>
                             </PrivateRoute>
@@ -68,7 +74,7 @@ const App: React.FC = () => {
                         path="/profile"
                         element={
                             <PrivateRoute user={user}>
-                                <MainLayout user={user || undefined}>
+                                <MainLayout user={user || undefined} onLogout={() => setUser(null)}>
                                     <Profile />
                                 </MainLayout>
                             </PrivateRoute>

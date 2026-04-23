@@ -4,7 +4,11 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
 
-const Login: React.FC = () => {
+interface LoginProps {
+    onLogin?: () => Promise<void> | void;
+}
+
+const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
 
@@ -19,6 +23,7 @@ const Login: React.FC = () => {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             });
 
+            await onLogin?.();
             message.success('Přihlášení úspěšné!');
             navigate('/dashboard');
         } catch (error) {

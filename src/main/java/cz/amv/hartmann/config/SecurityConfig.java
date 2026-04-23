@@ -25,10 +25,10 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .ignoringRequestMatchers("/api/auth/login", "/api/auth/register")
+                        .ignoringRequestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout")
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout").permitAll()
                         .requestMatchers("/", "/static/**", "/favicon.ico", "/manifest.json", "/logo192.png", "/logo512.png").permitAll()
                         .requestMatchers("/login", "/register", "/dashboard/**").permitAll() // React routes
                         .requestMatchers("/api/**").authenticated()
@@ -53,6 +53,13 @@ public class SecurityConfig {
                             response.setStatus(200);
                             response.setContentType("application/json");
                             response.getWriter().write("{\"message\":\"Logout successful\"}");
+                        })
+                )
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(401);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\":\"Unauthorized\"}");
                         })
                 )
                 .httpBasic(Customizer.withDefaults());

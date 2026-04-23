@@ -1,10 +1,9 @@
 import React from 'react';
-import { Layout, Menu, Button, Avatar, Dropdown } from 'antd';
+import { Layout, Menu, Avatar, Dropdown } from 'antd';
 import {
     DashboardOutlined,
     UserOutlined,
     LogoutOutlined,
-    SettingOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import type { MenuProps } from 'antd';
@@ -15,15 +14,17 @@ const { Header, Content, Footer } = Layout;
 interface MainLayoutProps {
     children: React.ReactNode;
     user?: { email: string };
+    onLogout?: () => void;
 }
 
-const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
+const MainLayout: React.FC<MainLayoutProps> = ({ children, user, onLogout }) => {
     const navigate = useNavigate();
     const location = useLocation();
 
     const handleLogout = async () => {
         try {
             await apiClient.post('/auth/logout');
+            onLogout?.();
             navigate('/login');
         } catch (error) {
             console.error('Logout failed:', error);
