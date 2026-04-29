@@ -21,4 +21,6 @@ public class OrderFilter {
     private String sku;
 
     private String ref;
+
+    private String recipe;
 }

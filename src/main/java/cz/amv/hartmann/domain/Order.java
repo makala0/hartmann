@@ -64,4 +64,8 @@ public class Order {
     @NotNull
     @Column(name = "ok_percentage", nullable = false)
     private Double okPercentage;
+
+    @Size(max = 50)
+    @Column(name = "recipe", length = 50)
+    private String recipe;
 }

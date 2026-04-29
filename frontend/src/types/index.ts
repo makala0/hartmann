@@ -12,6 +12,7 @@ export interface Order {
     reworkCount: number;
     totalCount: number;
     okPercentage: number;
+    recipe: string;
 }
 
 export interface Item {
@@ -47,6 +48,7 @@ export interface OrderDetailWithItems {
     okPercentage: number;
     orderBeginDate: string;
     lineType: string;
+    recipe: string;
     items: Item[];
 }
 
@@ -90,6 +92,7 @@ export interface OrderFilter {
     dateTo?: string;
     sku?: string;
     ref?: string;
+    recipe?: string;
     page?: number;
     size?: number;
 }

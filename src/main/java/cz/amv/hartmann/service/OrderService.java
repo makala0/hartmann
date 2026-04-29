@@ -99,6 +99,13 @@ public class OrderService {
                 ));
             }
 
+            if (filter.getRecipe() != null && !filter.getRecipe().isEmpty()) {
+                predicates.add(cb.like(
+                        cb.lower(root.get("recipe")),
+                        "%" + filter.getRecipe().toLowerCase() + "%"
+                ));
+            }
+
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
@@ -232,6 +239,7 @@ public class OrderService {
         result.setOkPercentage(result.getTotalCount() > 0 ? (double) (okCount * 100 / result.getTotalCount()) : 0.0);
         result.setOrderBeginDate(order.getOrderBeginDate());
         result.setLineType(order.getLineType());
+        result.setRecipe(order.getRecipe());
 
         List<ItemDto> itemDtos = items.stream().map(this::convertToDto).collect(Collectors.toList());
         result.setItems(itemDtos);

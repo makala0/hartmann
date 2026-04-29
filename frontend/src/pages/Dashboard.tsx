@@ -90,6 +90,12 @@ const Dashboard: React.FC = () => {
             width: 130,
         },
         {
+            title: 'Recipe',
+            dataIndex: 'recipe',
+            key: 'recipe',
+            width: 130,
+        },
+        {
             title: 'Datum zahájení',
             dataIndex: 'orderBeginDate',
             key: 'orderBeginDate',
@@ -274,8 +280,16 @@ const Dashboard: React.FC = () => {
                         />
                     </Col>
                 </Row>
-                <Row style={{ marginTop: 16 }}>
-                    <Col>
+                <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                    <Col xs={24} sm={12} md={8}>
+                        <label>Recipe:</label>
+                        <Input
+                            placeholder="Recipe"
+                            value={filter.recipe}
+                            onChange={(e) => setFilter({ ...filter, recipe: e.target.value })}
+                        />
+                    </Col>
+                    <Col style={{ marginTop: 22 }}>
                         <Space>
                             <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
                                 Filtrovat

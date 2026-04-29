@@ -582,6 +582,9 @@ const OrderDetail: React.FC = () => {
                             <Descriptions.Item label="Line Type">
                                 <Tag color="blue">{orderDetail.lineType}</Tag>
                             </Descriptions.Item>
+                            <Descriptions.Item label="Recipe">
+                                {orderDetail.recipe}
+                            </Descriptions.Item>
                             <Descriptions.Item label="Datum zahájení">
                                 {dayjs(orderDetail.orderBeginDate).format('DD.MM.YYYY HH:mm')}
                             </Descriptions.Item>

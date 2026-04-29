@@ -70,7 +70,7 @@ public class ApiController {
     }
 
     @GetMapping("/dashboard/orders")
-    public ResponseEntity<?> getRecipes(
+    public ResponseEntity<?> getOrders(
             @RequestParam(required = false) LocalDate dateFrom,
             @RequestParam(required = false) LocalDate dateTo,
             @RequestParam(defaultValue = "") String lineType,
@@ -78,6 +78,7 @@ public class ApiController {
             @RequestParam(defaultValue = "0") Long orderNumber,
             @RequestParam(defaultValue = "") String sku,
             @RequestParam(defaultValue = "") String ref,
+            @RequestParam(defaultValue = "") String recipe,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
@@ -89,6 +90,7 @@ public class ApiController {
         orderFilter.setDateTo(dateTo);
         orderFilter.setSku(sku);
         orderFilter.setRef(ref);
+        orderFilter.setRecipe(recipe);
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderBeginDate").descending());
         Page<Order> recipePage = this.orderService.searchRecipes(orderFilter, pageable);

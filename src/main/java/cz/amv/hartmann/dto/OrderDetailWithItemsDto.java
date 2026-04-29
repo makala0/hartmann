@@ -19,6 +19,7 @@ public class OrderDetailWithItemsDto {
     private Double okPercentage;
     private Instant orderBeginDate;
     private String lineType;
+    private String recipe;
 
     private List<ItemDto> items;
 }
