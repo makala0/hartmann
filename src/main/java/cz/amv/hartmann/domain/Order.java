@@ -45,24 +45,19 @@ public class Order {
     @Column(name = "ref", nullable = false, length = 50)
     private String ref;
 
-    @NotNull
-    @Column(name = "ok_count", nullable = false)
+    @Column(name = "ok_count")
     private Long okCount;
 
-    @NotNull
-    @Column(name = "nok_count", nullable = false)
+    @Column(name = "nok_count")
     private Long nokCount;
 
-    @NotNull
-    @Column(name = "rework_count", nullable = false)
+    @Column(name = "rework_count")
     private Long reworkCount;
 
-    @NotNull
-    @Column(name = "total_count", nullable = false)
+    @Column(name = "total_count")
     private Long totalCount;
 
-    @NotNull
-    @Column(name = "ok_percentage", nullable = false)
+    @Column(name = "ok_percentage")
     private Double okPercentage;
 
     @Size(max = 50)
