@@ -249,7 +249,7 @@ const OrderDetail: React.FC = () => {
 
     const columns: ColumnsType<Item> = [
         {
-            title: 'Item ID',
+            title: 'ID Kusu',
             dataIndex: 'itemId',
             key: 'itemId',
             width: 140,
@@ -652,7 +652,7 @@ const OrderDetail: React.FC = () => {
                 {selectedItem && (
                     <Space direction="vertical" style={{ width: '100%' }} size="large">
                         <Descriptions title="Základní informace" column={1} size="middle" bordered>
-                            <Descriptions.Item label="Item ID">
+                            <Descriptions.Item label="ID Kusu">
                                 <Text code copyable={{ text: selectedItem.itemId }}>
                                     {selectedItem.itemId}
                                 </Text>
