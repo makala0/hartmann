@@ -25,23 +25,63 @@ public class OrderService {
         this.itemRepository = itemRepository;
     }
 
-    public Map<String, Object> getDashboardStats() {
-        List<Order> allOrders = orderRepository.findAll();
+    public Map<String, Object> getDashboardStats(List<Order> filteredOrders) {
+        saveStatValues(filteredOrders);
+        List<Long> orderNumbers = filteredOrders.stream()
+                .map(Order::getOrderNumber)
+                .toList();
+        List<Item> itemsByFilteredOrders = this.itemRepository.findItemsByOrderNumbers(orderNumbers);
 
-        long totalOkCount = allOrders.stream()
-                .mapToLong(Order::getOkCount)
-                .sum();
+        long totalNokCount = itemsByFilteredOrders.stream()
+                .filter(item -> "NOK".equals(item.getTotalResult()))
+                .count();
 
-        long totalNokCount = allOrders.stream()
-                .mapToLong(Order::getNokCount)
-                .sum();
+        long totalOkCount = itemsByFilteredOrders.stream()
+                .filter(item -> "OK".equals(item.getTotalResult()))
+                .count();
+
+
+
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("okCount", totalOkCount);
         stats.put("nokCount", totalNokCount);
-        stats.put("totalRecipes", allOrders.size());
+        stats.put("totalRecipes", filteredOrders.size());
+
 
         return stats;
+    }
+
+    private void saveStatValues(List<Order> filteredOrders) {
+        for (Order order : filteredOrders) {
+            List<Item> orderItems = this.itemRepository.findItemsByOrderNumber(order.getOrderNumber());
+            long totalNokCount = orderItems.stream()
+                    .filter(item -> "NOK".equals(item.getTotalResult()))
+                    .count();
+
+            long totalOkCount = orderItems.stream()
+                    .filter(item -> "OK".equals(item.getTotalResult()))
+                    .count();
+
+            long totalReworkCount = orderItems.stream()
+                    .filter(item -> "REWORK".equals(item.getTotalResult()))
+                    .count();
+            long totalCount = orderItems.size();
+
+            double okPercentage = 0.0;
+
+            if (totalCount > 0) {
+                okPercentage = (totalOkCount * 100.0) / totalCount;
+            }
+
+            order.setOkCount(totalOkCount);
+            order.setNokCount(totalNokCount);
+            order.setReworkCount(totalReworkCount);
+            order.setTotalCount(totalCount);
+            order.setOkPercentage(okPercentage);
+
+            this.orderRepository.saveAndFlush(order);
+        }
     }
 
     public Page<Order> searchRecipes(OrderFilter filter, Pageable pageable) {

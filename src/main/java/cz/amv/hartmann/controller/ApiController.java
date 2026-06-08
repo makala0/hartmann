@@ -94,6 +94,7 @@ public class ApiController {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderBeginDate").descending());
         Page<Order> recipePage = this.orderService.searchRecipes(orderFilter, pageable);
+        Map<String, Object> stats = this.orderService.getDashboardStats(recipePage.getContent());
 
         Map<String, Object> response = new HashMap<>();
         response.put("content", recipePage.getContent());
@@ -101,14 +102,9 @@ public class ApiController {
         response.put("totalPages", recipePage.getTotalPages());
         response.put("currentPage", recipePage.getNumber());
         response.put("size", recipePage.getSize());
+        response.put("stats", stats);
 
         return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/dashboard/stats")
-    public ResponseEntity<?> getDashboardStats() {
-        Map<String, Object> stats = orderService.getDashboardStats();
-        return ResponseEntity.ok(stats);
     }
 
     @GetMapping("/dashboard/order/{id}")

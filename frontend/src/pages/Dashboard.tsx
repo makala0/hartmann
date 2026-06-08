@@ -54,6 +54,7 @@ const Dashboard: React.FC = () => {
                 pageSize: response.data.size,
                 total: response.data.totalElements,
             });
+            setStats(response.data.stats)
         } catch (error) {
             console.error('Failed to fetch orders:', error);
         } finally {
@@ -61,18 +62,17 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    const fetchStats = async () => {
-        try {
-            const response = await apiClient.get('/dashboard/stats');
-            setStats(response.data);
-        } catch (error) {
-            console.error('Failed to fetch stats:', error);
-        }
-    };
+    // const fetchStats = async () => {
+    //     try {
+    //         const response = await apiClient.get('/dashboard/stats');
+    //         setStats(response.data);
+    //     } catch (error) {
+    //         console.error('Failed to fetch stats:', error);
+    //     }
+    // };
 
     useEffect(() => {
         fetchOrders(filter);
-        fetchStats();
     }, []);
 
     const columns: ColumnsType<Order> = [

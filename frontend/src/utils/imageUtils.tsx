@@ -13,13 +13,13 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
     }
 
     // Extrakt názvu souboru z cesty
-    const fileName = imagePath.split('/').pop();
+    const filePath = imagePath.split('/').pop();
 
-    if (!fileName) {
+    if (!imagePath) {
         return null;
     }
 
-    return `${API_BASE_URL}/images/${fileName}`;
+    return `${API_BASE_URL}/images/${imagePath}`;
 };
 
 /**
