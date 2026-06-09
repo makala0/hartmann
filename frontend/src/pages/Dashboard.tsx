@@ -183,7 +183,7 @@ const Dashboard: React.FC = () => {
 
     return (
         <div>
-            <h1 style={{ marginBottom: 24 }}>Dashboard - Objednávky</h1>
+            <h1 style={{ marginBottom: 24 }}>Zákazky</h1>
 
             {/* Statistiky */}
             <Row gutter={16} style={{ marginBottom: 24 }}>
@@ -210,7 +210,7 @@ const Dashboard: React.FC = () => {
                 <Col xs={24} sm={8}>
                     <Card>
                         <Statistic
-                            title="Celkem objednávek"
+                            title="Celkem zakázek"
                             value={stats.totalRecipes}
                             prefix={<FileTextOutlined />}
                         />
@@ -219,7 +219,7 @@ const Dashboard: React.FC = () => {
             </Row>
 
             {/* Filtry */}
-            <Card title="Filtry objednávek" style={{ marginBottom: 24 }}>
+            <Card title="Filtry zakázek" style={{ marginBottom: 24 }}>
                 <Row gutter={[16, 16]}>
                     <Col xs={24} sm={12} md={8}>
                         <label>Datum zahájení:</label>
@@ -303,7 +303,7 @@ const Dashboard: React.FC = () => {
             </Card>
 
             {/* Tabulka */}
-            <Card title="Seznam objednávek">
+            <Card title="Seznam zakázek">
                 <Table
                     columns={columns}
                     dataSource={orders}
@@ -315,7 +315,7 @@ const Dashboard: React.FC = () => {
                         showSizeChanger: true,
                         showQuickJumper: true,
                         showTotal: (total, range) =>
-                            `${range[0]}-${range[1]} z ${total} objednávek`,
+                            `${range[0]}-${range[1]} z ${total} zakázek`,
                         onChange: (page, pageSize) => {
                             fetchOrders({ ...filter, page: page - 1, size: pageSize });
                         },
