@@ -13,6 +13,7 @@ export interface Order {
     totalCount: number;
     okPercentage: number;
     recipe: string;
+    comment?: string;
 }
 
 export interface Item {
@@ -49,6 +50,7 @@ export interface OrderDetailWithItems {
     orderBeginDate: string;
     lineType: string;
     recipe: string;
+    comment?: string;
     items: Item[];
 }
 

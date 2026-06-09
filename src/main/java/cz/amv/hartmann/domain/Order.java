@@ -63,4 +63,8 @@ public class Order {
     @Size(max = 50)
     @Column(name = "recipe", length = 50)
     private String recipe;
+
+    @Size(max = 4000)
+    @Column(name = "order_comment", length = 4000)
+    private String comment;
 }

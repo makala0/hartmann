@@ -280,11 +280,22 @@ public class OrderService {
         result.setOrderBeginDate(order.getOrderBeginDate());
         result.setLineType(order.getLineType());
         result.setRecipe(order.getRecipe());
+        result.setComment(order.getComment());
 
         List<ItemDto> itemDtos = items.stream().map(this::convertToDto).collect(Collectors.toList());
         result.setItems(itemDtos);
 
         return result;
+    }
+
+    public OrderDetailWithItemsDto updateOrderComment(Long orderId, String comment) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Objednávka nenalezena: " + orderId));
+
+        order.setComment(comment);
+        orderRepository.saveAndFlush(order);
+
+        return getOrderDetailWithItems(orderId);
     }
 
     private ItemDto convertToDto(Item item) {

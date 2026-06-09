@@ -117,6 +117,19 @@ public class ApiController {
         }
     }
 
+    @PutMapping("/dashboard/order/{id}/comment")
+    public ResponseEntity<?> updateOrderComment(
+            @PathVariable Long id,
+            @Valid @RequestBody OrderCommentForm form
+    ) {
+        try {
+            OrderDetailWithItemsDto detail = this.orderService.updateOrderComment(id, form.getComment());
+            return ResponseEntity.ok(detail);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping("/dashboard/order/{id}/items")
     public ResponseEntity<?> getOrderItems(
             @PathVariable Long id,

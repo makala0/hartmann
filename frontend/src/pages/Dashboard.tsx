@@ -11,6 +11,8 @@ import {
     Space,
     Tag,
     InputNumber,
+    Select,
+    AutoComplete,
 } from 'antd';
 import {
     CheckCircleOutlined,
@@ -27,6 +29,19 @@ import apiClient from '../api/client';
 import type { Order, DashboardStats, OrderFilter } from '../types';
 
 const { RangePicker } = DatePicker;
+
+const LINE_TYPE_OPTIONS = [
+    { value: 'GAW2', label: 'GAW2' },
+];
+
+const RECIPE_OPTIONS = [
+    'REF277508',
+    'REF277516',
+    'REF936275',
+    'REF938800',
+    'REF938857',
+    'REF277547',
+].map((recipe) => ({ value: recipe, label: recipe }));
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -77,21 +92,33 @@ const Dashboard: React.FC = () => {
 
     const columns: ColumnsType<Order> = [
         {
-            title: 'Order ID',
+            title: 'ID Zakázky',
             dataIndex: 'orderId',
             key: 'orderId',
             width: 120,
             render: (text: string) => <code>{text}</code>,
         },
         {
-            title: 'Order Number',
+            title: 'Číslo zakázky',
             dataIndex: 'orderNumber',
             key: 'orderNumber',
             width: 130,
         },
         {
-            title: 'Recipe',
-            dataIndex: 'recipe',
+            title: 'Typ linky',
+            dataIndex: 'lineType',
+            key: 'lineType',
+            width: 110,
+        },
+        {
+            title: 'SKU',
+            dataIndex: 'sku',
+            key: 'sku',
+            width: 130,
+        },
+        {
+            title: 'Receptura',
+            dataIndex: 'Receptura',
             key: 'recipe',
             width: 130,
         },
@@ -236,17 +263,20 @@ const Dashboard: React.FC = () => {
                         />
                     </Col>
                     <Col xs={24} sm={12} md={8}>
-                        <label>Line Type:</label>
-                        <Input
-                            placeholder="Line Type"
+                        <label>Typ linky:</label>
+                        <Select
+                            allowClear
+                            placeholder="Typ linky"
+                            style={{ width: '100%' }}
                             value={filter.lineType}
-                            onChange={(e) => setFilter({ ...filter, lineType: e.target.value })}
+                            options={LINE_TYPE_OPTIONS}
+                            onChange={(value) => setFilter({ ...filter, lineType: value })}
                         />
                     </Col>
                     <Col xs={24} sm={12} md={8}>
-                        <label>Order ID:</label>
+                        <label>ID Zakázky:</label>
                         <InputNumber
-                            placeholder="Order ID"
+                            placeholder="ID Zakázky"
                             style={{ width: '100%' }}
                             value={filter.orderId}
                             onChange={(value) => setFilter({ ...filter, orderId: value || undefined })}
@@ -255,9 +285,9 @@ const Dashboard: React.FC = () => {
                 </Row>
                 <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                     <Col xs={24} sm={12} md={8}>
-                        <label>Order Number:</label>
+                        <label>Číslo zakázky:</label>
                         <InputNumber
-                            placeholder="Order Number"
+                            placeholder="Číslo zakázky"
                             style={{ width: '100%' }}
                             value={filter.orderNumber}
                             onChange={(value) => setFilter({ ...filter, orderNumber: value || undefined })}
@@ -272,23 +302,22 @@ const Dashboard: React.FC = () => {
                         />
                     </Col>
                     <Col xs={24} sm={12} md={8}>
-                        <label>Ref:</label>
-                        <Input
-                            placeholder="Ref"
-                            value={filter.ref}
-                            onChange={(e) => setFilter({ ...filter, ref: e.target.value })}
+                        <label>Receptura:</label>
+                        <AutoComplete
+                            allowClear
+                            placeholder="Recipe"
+                            style={{ width: '100%' }}
+                            value={filter.recipe}
+                            options={RECIPE_OPTIONS}
+                            filterOption={(inputValue, option) =>
+                                Boolean(option?.value.toUpperCase().includes(inputValue.toUpperCase()))
+                            }
+                            onChange={(value) => setFilter({ ...filter, recipe: value || undefined })}
                         />
                     </Col>
                 </Row>
                 <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-                    <Col xs={24} sm={12} md={8}>
-                        <label>Recipe:</label>
-                        <Input
-                            placeholder="Recipe"
-                            value={filter.recipe}
-                            onChange={(e) => setFilter({ ...filter, recipe: e.target.value })}
-                        />
-                    </Col>
+
                     <Col style={{ marginTop: 22 }}>
                         <Space>
                             <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
@@ -309,7 +338,7 @@ const Dashboard: React.FC = () => {
                     dataSource={orders}
                     loading={loading}
                     rowKey="id"
-                    scroll={{ x: 1000 }}
+                    scroll={{ x: 1240 }}
                     pagination={{
                         ...pagination,
                         showSizeChanger: true,

@@ -20,6 +20,7 @@ public class OrderDetailWithItemsDto {
     private Instant orderBeginDate;
     private String lineType;
     private String recipe;
+    private String comment;
 
     private List<ItemDto> items;
 }

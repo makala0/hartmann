@@ -19,6 +19,7 @@ import {
     Input,
     Drawer,
     Spin,
+    message,
 } from 'antd';
 import {
     CheckCircleOutlined,
@@ -31,6 +32,7 @@ import {
     SettingOutlined,
     CameraOutlined,
     ExclamationCircleOutlined,
+    SaveOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -41,6 +43,7 @@ import { getImageUrl } from '../utils/imageUtils';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+const { TextArea } = Input;
 
 // Komponenta pro zobrazení obrázku s error handlingem
 const SafeImage: React.FC<{
@@ -168,6 +171,8 @@ const OrderDetail: React.FC = () => {
     const [filters, setFilters] = useState<ItemFilter>({});
     const [showFilters, setShowFilters] = useState(false);
     const [drawerVisible, setDrawerVisible] = useState(false);
+    const [commentValue, setCommentValue] = useState('');
+    const [savingComment, setSavingComment] = useState(false);
 
     useEffect(() => {
         const fetchOrderDetail = async () => {
@@ -176,6 +181,7 @@ const OrderDetail: React.FC = () => {
                 const response = await apiClient.get(`/dashboard/orderDetailWithItems/${id}`);
                 setOrderDetail(response.data);
                 setFilteredItems(response.data.items);
+                setCommentValue(response.data.comment || '');
             } catch (error) {
                 console.error('Failed to fetch order detail:', error);
             } finally {
@@ -245,6 +251,26 @@ const OrderDetail: React.FC = () => {
     const clearFilters = () => {
         setFilters({});
         setShowFilters(false);
+    };
+
+    const handleSaveComment = async () => {
+        if (!id) return;
+
+        setSavingComment(true);
+        try {
+            const response = await apiClient.put(`/dashboard/order/${id}/comment`, {
+                comment: commentValue,
+            });
+            setOrderDetail(response.data);
+            setFilteredItems(response.data.items);
+            setCommentValue(response.data.comment || '');
+            message.success('Komentář byl uložen');
+        } catch (error) {
+            console.error('Failed to save order comment:', error);
+            message.error('Komentář se nepodařilo uložit');
+        } finally {
+            setSavingComment(false);
+        }
     };
 
     const columns: ColumnsType<Item> = [
@@ -589,6 +615,28 @@ const OrderDetail: React.FC = () => {
                                 {dayjs(orderDetail.orderBeginDate).format('DD.MM.YYYY HH:mm')}
                             </Descriptions.Item>
                         </Descriptions>
+                        <Divider style={{ margin: '16px 0' }} />
+                        <Space direction="vertical" style={{ width: '100%' }} size="small">
+                            <Text strong>Komentář</Text>
+                            <TextArea
+                                placeholder="Přidat komentář k objednávce"
+                                value={commentValue}
+                                onChange={(event) => setCommentValue(event.target.value)}
+                                autoSize={{ minRows: 3, maxRows: 6 }}
+                                maxLength={4000}
+                                showCount
+                            />
+                            <div style={{ textAlign: 'right' }}>
+                                <Button
+                                    type="primary"
+                                    icon={<SaveOutlined />}
+                                    loading={savingComment}
+                                    onClick={handleSaveComment}
+                                >
+                                    Uložit komentář
+                                </Button>
+                            </div>
+                        </Space>
                     </Card>
                 </Col>
             </Row>
@@ -647,96 +695,100 @@ const OrderDetail: React.FC = () => {
                     setSelectedItem(null);
                 }}
                 open={drawerVisible}
-                width={600}
+                width="100vw"
             >
                 {selectedItem && (
-                    <Space direction="vertical" style={{ width: '100%' }} size="large">
-                        <Descriptions title="Základní informace" column={1} size="middle" bordered>
-                            <Descriptions.Item label="ID Kusu">
-                                <Text code copyable={{ text: selectedItem.itemId }}>
-                                    {selectedItem.itemId}
-                                </Text>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="Sériové číslo">
-                                {selectedItem.serialNumber}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="Čas kontroly">
-                                {dayjs(selectedItem.endInspectionTime).format('DD.MM.YYYY HH:mm:ss')}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="Kamera">
-                                <Badge count={selectedItem.cameraNumber} showZero style={{ backgroundColor: '#108ee9' }}>
-                                    <CameraOutlined style={{ fontSize: '18px' }} />
-                                </Badge>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="Typ defektu">
-                                {selectedItem.defectType === 'N/A' || !selectedItem.defectType ? (
-                                    <Text type="secondary">Bez defektu</Text>
-                                ) : (
-                                    <Tag color="orange">{selectedItem.defectType}</Tag>
-                                )}
-                            </Descriptions.Item>
-                        </Descriptions>
+                    <Row gutter={[24, 24]} align="top">
+                        <Col xs={24} flex="0 0 560px" style={{ maxWidth: '100%' }}>
+                            <Space direction="vertical" style={{ width: '100%' }} size="large">
+                                <Descriptions title="Základní informace" column={1} size="middle" bordered>
+                                    <Descriptions.Item label="ID Kusu">
+                                        <Text code copyable={{ text: selectedItem.itemId }}>
+                                            {selectedItem.itemId}
+                                        </Text>
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="Sériové číslo">
+                                        {selectedItem.serialNumber}
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="Čas kontroly">
+                                        {dayjs(selectedItem.endInspectionTime).format('DD.MM.YYYY HH:mm:ss')}
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="Kamera">
+                                        <Badge count={selectedItem.cameraNumber} showZero style={{ backgroundColor: '#108ee9' }}>
+                                            <CameraOutlined style={{ fontSize: '18px' }} />
+                                        </Badge>
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="Typ defektu">
+                                        {selectedItem.defectType === 'N/A' || !selectedItem.defectType ? (
+                                            <Text type="secondary">Bez defektu</Text>
+                                        ) : (
+                                            <Tag color="orange">{selectedItem.defectType}</Tag>
+                                        )}
+                                    </Descriptions.Item>
+                                </Descriptions>
 
-                        <Card title="Výsledky kontrol" size="small">
-                            <Row gutter={[16, 16]}>
-                                {[
-                                    { num: 1, result: selectedItem.station1Result },
-                                    { num: 2, result: selectedItem.station2Result },
-                                    { num: 3, result: selectedItem.station3Result },
-                                ].map(({ num, result }) => (
-                                    <Col span={8} key={num}>
-                                        <Card size="small" style={{ textAlign: 'center' }}>
-                                            <Text type="secondary">Stanice {num}</Text>
-                                            <div style={{ marginTop: 8 }}>
-                                                <Tag
-                                                    color={getStatusColor(result)}
-                                                    icon={getStatusIcon(result)}
-                                                    style={{ fontSize: '14px', padding: '4px 8px' }}
-                                                >
-                                                    {result}
-                                                </Tag>
-                                            </div>
-                                        </Card>
-                                    </Col>
-                                ))}
-                            </Row>
-                            <Divider />
-                            <div style={{ textAlign: 'center' }}>
-                                <Text strong style={{ fontSize: '16px' }}>Celkový výsledek:</Text>
-                                <div style={{ marginTop: 8 }}>
-                                    <Tag
-                                        color={getStatusColor(selectedItem.totalResult)}
-                                        icon={getStatusIcon(selectedItem.totalResult)}
-                                        style={{ fontSize: '18px', padding: '8px 16px' }}
-                                    >
-                                        {selectedItem.totalResult}
-                                    </Tag>
-                                </div>
-                            </div>
-                        </Card>
-
-                        {/* Aktualizovaná sekce s obrázky */}
-                        <Card title="Obrázky ze stanic" size="small">
-                            <Row gutter={[16, 16]}>
-                                {[
-                                    { label: 'Stanice 1', path: selectedItem.station1ImagePath },
-                                    { label: 'Stanice 2', path: selectedItem.station2ImagePath },
-                                    { label: 'Stanice 3', path: selectedItem.station3ImagePath },
-                                ].map(({ label, path }, index) => (
-                                    <Col span={24} key={index}>
-                                        <Card size="small" title={label}>
-                                            <SafeImage
-                                                imagePath={path}
-                                                alt={label}
-                                                height={200}
-                                                preview={true}
-                                            />
-                                        </Card>
-                                    </Col>
-                                ))}
-                            </Row>
-                        </Card>
-                    </Space>
+                                <Card title="Výsledky kontrol" size="small">
+                                    <Row gutter={[16, 16]}>
+                                        {[
+                                            { num: 1, result: selectedItem.station1Result },
+                                            { num: 2, result: selectedItem.station2Result },
+                                            { num: 3, result: selectedItem.station3Result },
+                                        ].map(({ num, result }) => (
+                                            <Col span={8} key={num}>
+                                                <Card size="small" style={{ textAlign: 'center' }}>
+                                                    <Text type="secondary">Stanice {num}</Text>
+                                                    <div style={{ marginTop: 8 }}>
+                                                        <Tag
+                                                            color={getStatusColor(result)}
+                                                            icon={getStatusIcon(result)}
+                                                            style={{ fontSize: '14px', padding: '4px 8px' }}
+                                                        >
+                                                            {result}
+                                                        </Tag>
+                                                    </div>
+                                                </Card>
+                                            </Col>
+                                        ))}
+                                    </Row>
+                                    <Divider />
+                                    <div style={{ textAlign: 'center' }}>
+                                        <Text strong style={{ fontSize: '16px' }}>Celkový výsledek:</Text>
+                                        <div style={{ marginTop: 8 }}>
+                                            <Tag
+                                                color={getStatusColor(selectedItem.totalResult)}
+                                                icon={getStatusIcon(selectedItem.totalResult)}
+                                                style={{ fontSize: '18px', padding: '8px 16px' }}
+                                            >
+                                                {selectedItem.totalResult}
+                                            </Tag>
+                                        </div>
+                                    </div>
+                                </Card>
+                            </Space>
+                        </Col>
+                        <Col xs={24} flex="1 1 600px" style={{ minWidth: 0 }}>
+                            <Card title="Obrázky ze stanic" size="small">
+                                <Row gutter={[16, 16]}>
+                                    {[
+                                        { label: 'Stanice 1', path: selectedItem.station1ImagePath },
+                                        { label: 'Stanice 2', path: selectedItem.station2ImagePath },
+                                        { label: 'Stanice 3', path: selectedItem.station3ImagePath },
+                                    ].map(({ label, path }, index) => (
+                                        <Col xs={24} xl={8} key={index}>
+                                            <Card size="small" title={label}>
+                                                <SafeImage
+                                                    imagePath={path}
+                                                    alt={label}
+                                                    height="clamp(280px, 42vh, 560px)"
+                                                    preview={true}
+                                                />
+                                            </Card>
+                                        </Col>
+                                    ))}
+                                </Row>
+                            </Card>
+                        </Col>
+                    </Row>
                 )}
             </Drawer>
         </div>
