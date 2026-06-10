@@ -75,7 +75,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user, onLogout }) => 
                         🏭 Hartmann
                     </div>
                     <Menu
-                        mode="horizontal"
+                        mode="vertical"
                         selectedKeys={[location.pathname]}
                         items={menuItems}
                         style={{ flex: 1, border: 'none' }}
