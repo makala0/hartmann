@@ -27,63 +27,56 @@ public class OrderService {
     }
 
     public Map<String, Object> getDashboardStats(List<Order> filteredOrders, long totalRecipes) {
-        saveStatValues(filteredOrders);
-        List<Long> orderNumbers = filteredOrders.stream()
-                .map(Order::getOrderNumber)
-                .toList();
-        List<Item> itemsByFilteredOrders = orderNumbers.isEmpty()
-                ? List.of()
-                : this.itemRepository.findItemsByOrderNumbers(orderNumbers);
+        List<ItemRepository.ItemResultStats> itemStats = getItemStatsForOrders(filteredOrders);
+        Map<Long, ItemRepository.ItemResultStats> itemStatsByOrderNumber = itemStats.stream()
+                .collect(Collectors.toMap(ItemRepository.ItemResultStats::getOrderNumber, stats -> stats));
 
-        long totalNokCount = itemsByFilteredOrders.stream()
-                .filter(item -> "NOK".equals(item.getTotalResult()))
-                .count();
+        applyStatValues(filteredOrders, itemStatsByOrderNumber);
 
-        long totalOkCount = itemsByFilteredOrders.stream()
-                .filter(item -> "OK".equals(item.getTotalResult()))
-                .count();
+        long totalOkCount = itemStats.stream()
+                .mapToLong(ItemRepository.ItemResultStats::getOkCount)
+                .sum();
 
-
-
+        long totalNokCount = itemStats.stream()
+                .mapToLong(ItemRepository.ItemResultStats::getNokCount)
+                .sum();
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("okCount", totalOkCount);
         stats.put("nokCount", totalNokCount);
         stats.put("totalRecipes", totalRecipes);
 
-
         return stats;
     }
 
-    private void saveStatValues(List<Order> filteredOrders) {
-        for (Order order : filteredOrders) {
-            List<Item> orderItems = this.itemRepository.findItemsByOrderNumber(order.getOrderNumber());
-            long totalNokCount = orderItems.stream()
-                    .filter(item -> "NOK".equals(item.getTotalResult()))
-                    .count();
+    private List<ItemRepository.ItemResultStats> getItemStatsForOrders(List<Order> orders) {
+        List<Long> orderNumbers = orders.stream()
+                .map(Order::getOrderNumber)
+                .toList();
 
-            long totalOkCount = orderItems.stream()
-                    .filter(item -> "OK".equals(item.getTotalResult()))
-                    .count();
+        if (orderNumbers.isEmpty()) {
+            return List.of();
+        }
 
-            long totalReworkCount = orderItems.stream()
-                    .filter(item -> "REWORK".equals(item.getTotalResult()))
-                    .count();
-            long totalCount = orderItems.size();
+        return this.itemRepository.getResultStatsByOrderNumbers(orderNumbers);
+    }
 
-            double okPercentage = 0.0;
-
-            if (totalCount > 0) {
-                okPercentage = (totalOkCount * 100.0) / totalCount;
-            }
+    private void applyStatValues(
+            List<Order> orders,
+            Map<Long, ItemRepository.ItemResultStats> itemStatsByOrderNumber
+    ) {
+        for (Order order : orders) {
+            ItemRepository.ItemResultStats itemStats = itemStatsByOrderNumber.get(order.getOrderNumber());
+            long totalOkCount = itemStats != null ? itemStats.getOkCount() : 0L;
+            long totalNokCount = itemStats != null ? itemStats.getNokCount() : 0L;
+            long totalReworkCount = itemStats != null ? itemStats.getReworkCount() : 0L;
+            long totalCount = itemStats != null ? itemStats.getTotalCount() : 0L;
 
             order.setOkCount(totalOkCount);
             order.setNokCount(totalNokCount);
             order.setReworkCount(totalReworkCount);
             order.setTotalCount(totalCount);
-            order.setOkPercentage(okPercentage);
-
-            this.orderRepository.saveAndFlush(order);
+            order.setOkPercentage(totalCount > 0 ? (totalOkCount * 100.0) / totalCount : 0.0);
         }
     }
 

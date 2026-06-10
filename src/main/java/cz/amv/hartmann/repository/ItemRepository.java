@@ -17,8 +17,23 @@ public interface ItemRepository extends JpaRepository<Item, Long>, JpaSpecificat
 
     long countByOrderNumberAndTotalResultIgnoreCase(Long orderNumber, String totalResult);
 
-    @Query("SELECT i FROM Item i WHERE i.orderNumber IN :orderNumbers ")
-    List<Item> findItemsByOrderNumbers(@Param("orderNumbers")List<Long> filteredOrderNumbers);
+    @Query("""
+            SELECT i.orderNumber AS orderNumber,
+                   SUM(CASE WHEN UPPER(i.totalResult) = 'OK' THEN 1L ELSE 0L END) AS okCount,
+                   SUM(CASE WHEN UPPER(i.totalResult) = 'NOK' THEN 1L ELSE 0L END) AS nokCount,
+                   SUM(CASE WHEN UPPER(i.totalResult) = 'REWORK' THEN 1L ELSE 0L END) AS reworkCount,
+                   COUNT(i) AS totalCount
+            FROM Item i
+            WHERE i.orderNumber IN :orderNumbers
+            GROUP BY i.orderNumber
+            """)
+    List<ItemResultStats> getResultStatsByOrderNumbers(@Param("orderNumbers") List<Long> orderNumbers);
 
-    List<Item> findItemsByOrderNumber(Long orderNumber);
+    interface ItemResultStats {
+        Long getOrderNumber();
+        Long getOkCount();
+        Long getNokCount();
+        Long getReworkCount();
+        Long getTotalCount();
+    }
 }
