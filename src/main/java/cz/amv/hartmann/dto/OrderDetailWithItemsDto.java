@@ -23,4 +23,8 @@ public class OrderDetailWithItemsDto {
     private String comment;
 
     private List<ItemDto> items;
+    private Long totalElements;
+    private Integer totalPages;
+    private Integer currentPage;
+    private Integer size;
 }

@@ -6,8 +6,9 @@ import cz.amv.hartmann.repository.ItemRepository;
 import cz.amv.hartmann.repository.OrderRepository;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -25,12 +26,14 @@ public class OrderService {
         this.itemRepository = itemRepository;
     }
 
-    public Map<String, Object> getDashboardStats(List<Order> filteredOrders) {
+    public Map<String, Object> getDashboardStats(List<Order> filteredOrders, long totalRecipes) {
         saveStatValues(filteredOrders);
         List<Long> orderNumbers = filteredOrders.stream()
                 .map(Order::getOrderNumber)
                 .toList();
-        List<Item> itemsByFilteredOrders = this.itemRepository.findItemsByOrderNumbers(orderNumbers);
+        List<Item> itemsByFilteredOrders = orderNumbers.isEmpty()
+                ? List.of()
+                : this.itemRepository.findItemsByOrderNumbers(orderNumbers);
 
         long totalNokCount = itemsByFilteredOrders.stream()
                 .filter(item -> "NOK".equals(item.getTotalResult()))
@@ -46,7 +49,7 @@ public class OrderService {
         Map<String, Object> stats = new HashMap<>();
         stats.put("okCount", totalOkCount);
         stats.put("nokCount", totalNokCount);
-        stats.put("totalRecipes", filteredOrders.size());
+        stats.put("totalRecipes", totalRecipes);
 
 
         return stats;
@@ -190,81 +193,71 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Objednávka nenalezena: " + orderId));
 
-        List<Item> allItems = itemRepository.findByOrderNumber(order.getOrderNumber());
-
-        // Aplikovat filtry
-        List<Item> filteredItems = allItems.stream()
-                .filter(item -> {
-                    if (filter.getDefectType() != null && !filter.getDefectType().isEmpty()) {
-                        return item.getDefectType().toLowerCase().contains(filter.getDefectType().toLowerCase());
-                    }
-                    return true;
-                })
-                .filter(item -> {
-                    if (filter.getTotalResult() != null && !filter.getTotalResult().isEmpty()) {
-                        return filter.getTotalResult().equalsIgnoreCase(item.getTotalResult());
-                    }
-                    return true;
-                })
-                .filter(item -> {
-                    if (filter.getCameraNumber() != null) {
-                        return Objects.equals(filter.getCameraNumber(), item.getCameraNumber().intValue());
-                    }
-                    return true;
-                })
-                .filter(item -> {
-                    if (filter.getSerialNumber() != null && !filter.getSerialNumber().isEmpty()) {
-                        return item.getSerialNumber().toLowerCase().contains(filter.getSerialNumber().toLowerCase());
-                    }
-                    return true;
-                })
-                .filter(item -> {
-                    if (filter.getItemId() != null && !filter.getItemId().isEmpty()) {
-                        return item.getItemId().toLowerCase().contains(filter.getItemId().toLowerCase());
-                    }
-                    return true;
-                })
-                .filter(item -> {
-                    if (filter.getDateFrom() != null) {
-                        return item.getEndInspectionTime().isAfter(filter.getDateFrom().atStartOfDay().toInstant(java.time.ZoneOffset.UTC));
-                    }
-                    return true;
-                })
-                .filter(item -> {
-                    if (filter.getDateTo() != null) {
-                        return item.getEndInspectionTime().isBefore(filter.getDateTo().atTime(23, 59, 59).toInstant(java.time.ZoneOffset.UTC));
-                    }
-                    return true;
-                })
-                .sorted((a, b) -> b.getEndInspectionTime().compareTo(a.getEndInspectionTime()))
-                .collect(Collectors.toList());
-
-        // Stránkování
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), filteredItems.size());
-        List<Item> pageContent = filteredItems.subList(start, end);
-
-        return new PageImpl<>(pageContent, pageable, filteredItems.size());
+        return itemRepository.findAll(toItemSpecification(order.getOrderNumber(), filter), pageable);
     }
 
-    public OrderDetailWithItemsDto getOrderDetailWithItems(Long orderId) {
+    private Specification<Item> toItemSpecification(Long orderNumber, ItemFilter filter) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            predicates.add(cb.equal(root.get("orderNumber"), orderNumber));
+
+            if (filter.getDefectType() != null && !filter.getDefectType().isEmpty()) {
+                predicates.add(cb.like(
+                        cb.lower(root.get("defectType")),
+                        "%" + filter.getDefectType().toLowerCase() + "%"
+                ));
+            }
+
+            if (filter.getTotalResult() != null && !filter.getTotalResult().isEmpty()) {
+                predicates.add(cb.equal(cb.lower(root.get("totalResult")), filter.getTotalResult().toLowerCase()));
+            }
+
+            if (filter.getCameraNumber() != null) {
+                predicates.add(cb.equal(root.get("cameraNumber"), filter.getCameraNumber().shortValue()));
+            }
+
+            if (filter.getSerialNumber() != null && !filter.getSerialNumber().isEmpty()) {
+                predicates.add(cb.like(
+                        cb.lower(root.get("serialNumber")),
+                        "%" + filter.getSerialNumber().toLowerCase() + "%"
+                ));
+            }
+
+            if (filter.getItemId() != null && !filter.getItemId().isEmpty()) {
+                predicates.add(cb.like(
+                        cb.lower(root.get("itemId")),
+                        "%" + filter.getItemId().toLowerCase() + "%"
+                ));
+            }
+
+            if (filter.getDateFrom() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(
+                        root.get("endInspectionTime"),
+                        filter.getDateFrom().atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
+                ));
+            }
+
+            if (filter.getDateTo() != null) {
+                predicates.add(cb.lessThanOrEqualTo(
+                        root.get("endInspectionTime"),
+                        filter.getDateTo().atTime(23, 59, 59).toInstant(java.time.ZoneOffset.UTC)
+                ));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    public OrderDetailWithItemsDto getOrderDetailWithItems(Long orderId, ItemFilter filter, Pageable pageable) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Objednávka nenalezena: " + orderId));
 
-        List<Item> items = itemRepository.findByOrderNumber(order.getOrderNumber());
-
-        // Výpočet souhrných statistik
-        long okCount = items.stream()
-                .filter(item -> "OK".equalsIgnoreCase(item.getTotalResult()))
-                .count();
-
-        long nokCount = items.stream()
-                .filter(item -> "NOK".equalsIgnoreCase(item.getTotalResult()))
-                .count();
-
-        long reworkCount = items.stream()
-                .filter(item -> "REWORK".equalsIgnoreCase(item.getTotalResult()))
-                .count();
+        long okCount = itemRepository.countByOrderNumberAndTotalResultIgnoreCase(order.getOrderNumber(), "OK");
+        long nokCount = itemRepository.countByOrderNumberAndTotalResultIgnoreCase(order.getOrderNumber(), "NOK");
+        long reworkCount = itemRepository.countByOrderNumberAndTotalResultIgnoreCase(order.getOrderNumber(), "REWORK");
+        long totalCount = itemRepository.countByOrderNumber(order.getOrderNumber());
+        Page<Item> itemPage = itemRepository.findAll(toItemSpecification(order.getOrderNumber(), filter), pageable);
 
         OrderDetailWithItemsDto result = new OrderDetailWithItemsDto();
         result.setId(order.getId());
@@ -275,15 +268,17 @@ public class OrderService {
         result.setOkCount(okCount);
         result.setNokCount(nokCount);
         result.setReworkCount(reworkCount);
-        result.setTotalCount(okCount + nokCount + reworkCount);
-        result.setOkPercentage(result.getTotalCount() > 0 ? (double) (okCount * 100 / result.getTotalCount()) : 0.0);
+        result.setTotalCount(totalCount);
+        result.setOkPercentage(totalCount > 0 ? (double) (okCount * 100 / totalCount) : 0.0);
         result.setOrderBeginDate(order.getOrderBeginDate());
         result.setLineType(order.getLineType());
         result.setRecipe(order.getRecipe());
         result.setComment(order.getComment());
-
-        List<ItemDto> itemDtos = items.stream().map(this::convertToDto).collect(Collectors.toList());
-        result.setItems(itemDtos);
+        result.setItems(itemPage.getContent().stream().map(this::convertToDto).collect(Collectors.toList()));
+        result.setTotalElements(itemPage.getTotalElements());
+        result.setTotalPages(itemPage.getTotalPages());
+        result.setCurrentPage(itemPage.getNumber());
+        result.setSize(itemPage.getSize());
 
         return result;
     }
@@ -294,8 +289,17 @@ public class OrderService {
 
         order.setComment(comment);
         orderRepository.saveAndFlush(order);
+        ItemFilter filter = new ItemFilter();
+        filter.setDefectType("");
+        filter.setTotalResult("");
+        filter.setCameraNumber(null);
+        filter.setDateFrom(null);
+        filter.setDateTo(null);
+        filter.setSerialNumber("");
+        filter.setItemId("");
+        Pageable pageable = PageRequest.of(1, 10, Sort.by("endInspectionTime").descending());
 
-        return getOrderDetailWithItems(orderId);
+        return getOrderDetailWithItems(orderId, filter, pageable);
     }
 
     private ItemDto convertToDto(Item item) {

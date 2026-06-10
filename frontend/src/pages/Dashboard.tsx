@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
     Card,
     Table,
@@ -58,24 +58,33 @@ const Dashboard: React.FC = () => {
         total: 0,
     });
     const [filter, setFilter] = useState<OrderFilter>({});
+    const [appliedFilter, setAppliedFilter] = useState<OrderFilter>({});
+    const { current: currentPage, pageSize } = pagination;
 
-    const fetchOrders = async (params: OrderFilter = {}) => {
+    const fetchOrders = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await apiClient.get('/dashboard/orders', { params });
+            const response = await apiClient.get('/dashboard/orders', {
+                params: {
+                    ...appliedFilter,
+                    page: currentPage - 1,
+                    size: pageSize,
+                },
+            });
             setOrders(response.data.content);
-            setPagination({
+            setPagination(prev => ({
+                ...prev,
                 current: response.data.currentPage + 1,
                 pageSize: response.data.size,
                 total: response.data.totalElements,
-            });
-            setStats(response.data.stats)
+            }));
+            setStats(response.data.stats);
         } catch (error) {
             console.error('Failed to fetch orders:', error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [appliedFilter, currentPage, pageSize]);
 
     // const fetchStats = async () => {
     //     try {
@@ -87,8 +96,8 @@ const Dashboard: React.FC = () => {
     // };
 
     useEffect(() => {
-        fetchOrders(filter);
-    }, []);
+        fetchOrders();
+    }, [fetchOrders]);
 
     const columns: ColumnsType<Order> = [
         {
@@ -200,12 +209,14 @@ const Dashboard: React.FC = () => {
     ];
 
     const handleSearch = () => {
-        fetchOrders({ ...filter, page: 0 });
+        setAppliedFilter(filter);
+        setPagination(prev => ({ ...prev, current: 1 }));
     };
 
     const handleReset = () => {
         setFilter({});
-        fetchOrders({});
+        setAppliedFilter({});
+        setPagination(prev => ({ ...prev, current: 1 }));
     };
 
     return (
@@ -345,8 +356,13 @@ const Dashboard: React.FC = () => {
                         showQuickJumper: true,
                         showTotal: (total, range) =>
                             `${range[0]}-${range[1]} z ${total} zakázek`,
+                        pageSizeOptions: ['10', '20', '50', '100'],
                         onChange: (page, pageSize) => {
-                            fetchOrders({ ...filter, page: page - 1, size: pageSize });
+                            setPagination(prev => ({
+                                ...prev,
+                                current: page,
+                                pageSize: pageSize || prev.pageSize,
+                            }));
                         },
                     }}
                 />

@@ -169,18 +169,36 @@ const OrderDetail: React.FC = () => {
     const [selectedItem, setSelectedItem] = useState<Item | null>(null);
     const [filteredItems, setFilteredItems] = useState<Item[]>([]);
     const [filters, setFilters] = useState<ItemFilter>({});
+    const [itemPagination, setItemPagination] = useState({
+        current: 1,
+        pageSize: 20,
+        total: 0,
+    });
     const [showFilters, setShowFilters] = useState(false);
     const [drawerVisible, setDrawerVisible] = useState(false);
     const [commentValue, setCommentValue] = useState('');
     const [savingComment, setSavingComment] = useState(false);
+    const { current: currentPage, pageSize } = itemPagination;
 
     useEffect(() => {
         const fetchOrderDetail = async () => {
             setLoading(true);
             try {
-                const response = await apiClient.get(`/dashboard/orderDetailWithItems/${id}`);
+                const response = await apiClient.get(`/dashboard/orderDetailWithItems/${id}`, {
+                    params: {
+                        ...filters,
+                        page: currentPage - 1,
+                        size: pageSize,
+                    },
+                });
                 setOrderDetail(response.data);
                 setFilteredItems(response.data.items);
+                setItemPagination(prev => ({
+                    ...prev,
+                    current: response.data.currentPage + 1,
+                    pageSize: response.data.size,
+                    total: response.data.totalElements,
+                }));
                 setCommentValue(response.data.comment || '');
             } catch (error) {
                 console.error('Failed to fetch order detail:', error);
@@ -190,37 +208,7 @@ const OrderDetail: React.FC = () => {
         };
 
         fetchOrderDetail();
-    }, [id]);
-
-    useEffect(() => {
-        if (!orderDetail) return;
-
-        let filtered = orderDetail.items;
-
-        if (filters.defectType) {
-            filtered = filtered.filter(item =>
-                item.defectType.toLowerCase().includes(filters.defectType!.toLowerCase())
-            );
-        }
-        if (filters.totalResult) {
-            filtered = filtered.filter(item => item.totalResult === filters.totalResult);
-        }
-        if (filters.cameraNumber) {
-            filtered = filtered.filter(item => item.cameraNumber === filters.cameraNumber);
-        }
-        if (filters.serialNumber) {
-            filtered = filtered.filter(item =>
-                item.serialNumber.toLowerCase().includes(filters.serialNumber!.toLowerCase())
-            );
-        }
-        if (filters.itemId) {
-            filtered = filtered.filter(item =>
-                item.itemId.toLowerCase().includes(filters.itemId!.toLowerCase())
-            );
-        }
-
-        setFilteredItems(filtered);
-    }, [filters, orderDetail]);
+    }, [id, filters, currentPage, pageSize]);
 
     const getStatusColor = (status: string) => {
         switch (status?.toUpperCase()) {
@@ -248,8 +236,14 @@ const OrderDetail: React.FC = () => {
         }
     };
 
+    const updateFilters = (newFilters: Partial<ItemFilter>) => {
+        setFilters(prev => ({ ...prev, ...newFilters }));
+        setItemPagination(prev => ({ ...prev, current: 1 }));
+    };
+
     const clearFilters = () => {
         setFilters({});
+        setItemPagination(prev => ({ ...prev, current: 1 }));
         setShowFilters(false);
     };
 
@@ -425,7 +419,7 @@ const OrderDetail: React.FC = () => {
                     placeholder="Všechny výsledky"
                     style={{ width: '100%' }}
                     value={filters.totalResult}
-                    onChange={(value) => setFilters(prev => ({ ...prev, totalResult: value }))}
+                    onChange={(value) => updateFilters({ totalResult: value })}
                     allowClear
                 >
                     <Option value="OK">OK</Option>
@@ -439,7 +433,7 @@ const OrderDetail: React.FC = () => {
                     placeholder="Všechny kamery"
                     style={{ width: '100%' }}
                     value={filters.cameraNumber}
-                    onChange={(value) => setFilters(prev => ({ ...prev, cameraNumber: value }))}
+                    onChange={(value) => updateFilters({ cameraNumber: value })}
                     allowClear
                 >
                     {[1, 2, 3, 4, 5].map(num => (
@@ -452,7 +446,7 @@ const OrderDetail: React.FC = () => {
                 <Input
                     placeholder="Hledat podle Item ID"
                     value={filters.itemId}
-                    onChange={(e) => setFilters(prev => ({ ...prev, itemId: e.target.value }))}
+                    onChange={(e) => updateFilters({ itemId: e.target.value })}
                     allowClear
                 />
             </Col>
@@ -461,7 +455,7 @@ const OrderDetail: React.FC = () => {
                 <Input
                     placeholder="Hledat podle sériového čísla"
                     value={filters.serialNumber}
-                    onChange={(e) => setFilters(prev => ({ ...prev, serialNumber: e.target.value }))}
+                    onChange={(e) => updateFilters({ serialNumber: e.target.value })}
                     allowClear
                 />
             </Col>
@@ -470,7 +464,7 @@ const OrderDetail: React.FC = () => {
                 <Input
                     placeholder="Hledat podle typu defektu"
                     value={filters.defectType}
-                    onChange={(e) => setFilters(prev => ({ ...prev, defectType: e.target.value }))}
+                    onChange={(e) => updateFilters({ defectType: e.target.value })}
                     allowClear
                 />
             </Col>
@@ -654,12 +648,12 @@ const OrderDetail: React.FC = () => {
                     <Space>
                         <Text strong>Seznam kusů</Text>
                         <Badge
-                            count={filteredItems.length}
+                            count={itemPagination.total}
                             style={{ backgroundColor: '#108ee9' }}
                         />
                         {hasActiveFilters && (
                             <Text type="secondary">
-                                (filtrováno z {orderDetail.items.length})
+                                (filtrováno z {orderDetail.totalCount})
                             </Text>
                         )}
                     </Space>
@@ -671,12 +665,21 @@ const OrderDetail: React.FC = () => {
                     dataSource={filteredItems}
                     rowKey="id"
                     pagination={{
-                        pageSize: 20,
+                        current: itemPagination.current,
+                        pageSize: itemPagination.pageSize,
+                        total: itemPagination.total,
                         showSizeChanger: true,
                         showQuickJumper: true,
                         showTotal: (total, range) =>
                             `${range[0]}-${range[1]} z ${total} kusů`,
                         pageSizeOptions: ['10', '20', '50', '100'],
+                        onChange: (page, pageSize) => {
+                            setItemPagination(prev => ({
+                                ...prev,
+                                current: page,
+                                pageSize: pageSize || prev.pageSize,
+                            }));
+                        },
                     }}
                     scroll={{ x: 1200 }}
                     size="small"

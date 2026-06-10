@@ -52,6 +52,10 @@ export interface OrderDetailWithItems {
     recipe: string;
     comment?: string;
     items: Item[];
+    totalElements: number;
+    totalPages: number;
+    currentPage: number;
+    size: number;
 }
 
 export interface OrderDetailDto {

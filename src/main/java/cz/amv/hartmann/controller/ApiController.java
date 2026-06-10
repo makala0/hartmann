@@ -94,7 +94,10 @@ public class ApiController {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderBeginDate").descending());
         Page<Order> recipePage = this.orderService.searchRecipes(orderFilter, pageable);
-        Map<String, Object> stats = this.orderService.getDashboardStats(recipePage.getContent());
+        Map<String, Object> stats = this.orderService.getDashboardStats(
+                recipePage.getContent(),
+                recipePage.getTotalElements()
+        );
 
         Map<String, Object> response = new HashMap<>();
         response.put("content", recipePage.getContent());
@@ -175,9 +178,30 @@ public class ApiController {
     }
 
     @GetMapping("/dashboard/orderDetailWithItems/{id}")
-    public ResponseEntity<?> getOrderDetailWithItems(@PathVariable Long id) {
+    public ResponseEntity<?> getOrderDetailWithItems(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "") String defectType,
+            @RequestParam(defaultValue = "") String totalResult,
+            @RequestParam(required = false) Integer cameraNumber,
+            @RequestParam(required = false) LocalDate dateFrom,
+            @RequestParam(required = false) LocalDate dateTo,
+            @RequestParam(defaultValue = "") String serialNumber,
+            @RequestParam(defaultValue = "") String itemId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
         try {
-            OrderDetailWithItemsDto detail = this.orderService.getOrderDetailWithItems(id);
+            ItemFilter filter = new ItemFilter();
+            filter.setDefectType(defectType);
+            filter.setTotalResult(totalResult);
+            filter.setCameraNumber(cameraNumber);
+            filter.setDateFrom(dateFrom);
+            filter.setDateTo(dateTo);
+            filter.setSerialNumber(serialNumber);
+            filter.setItemId(itemId);
+
+            Pageable pageable = PageRequest.of(page, size, Sort.by("endInspectionTime").descending());
+            OrderDetailWithItemsDto detail = this.orderService.getOrderDetailWithItems(id, filter, pageable);
             return ResponseEntity.ok(detail);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
