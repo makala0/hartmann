@@ -114,7 +114,7 @@ const Profile: React.FC = () => {
                         name="newPassword"
                         rules={[
                             { required: true, message: 'Zadejte nové heslo!' },
-                            { min: 6, message: 'Heslo musí mít alespoň 6 znaků!' },
+                            { min: 8, message: 'Heslo musí mít alespoň 6 znaků!' },
                         ]}
                     >
                         <Input.Password

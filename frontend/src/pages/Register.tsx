@@ -92,7 +92,7 @@ const Register: React.FC = () => {
                         name="password"
                         rules={[
                             { required: true, message: 'Zadejte heslo!' },
-                            { min: 6, message: 'Heslo musí mít alespoň 6 znaků!' },
+                            { min: 8, message: 'Heslo musí mít alespoň 6 znaků!' },
                         ]}
                     >
                         <Input.Password prefix={<LockOutlined />} placeholder="Minimálně 6 znaků" />

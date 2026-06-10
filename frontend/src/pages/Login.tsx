@@ -71,9 +71,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         </Button>
                     </Form.Item>
 
-                    <div style={{ textAlign: 'center' }}>
-                        <a onClick={() => navigate('/register')}>Zaregistrovat nový účet</a>
-                    </div>
+                    {/*<div style={{ textAlign: 'center' }}>*/}
+                    {/*    <a onClick={() => navigate('/register')}>Zaregistrovat nový účet</a>*/}
+                    {/*</div>*/}
                 </Form>
             </Card>
         </div>
