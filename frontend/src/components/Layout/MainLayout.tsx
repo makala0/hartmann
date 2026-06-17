@@ -79,7 +79,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user, onLogout }) => 
                         color: '#1890ff',
                         marginRight: '40px'
                     }}>
-                        🏭 Hartmann
+                        🏭Hartmann
                     </div>
                     <Menu
                         mode="horizontal"
