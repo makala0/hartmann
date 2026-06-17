@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 
@@ -92,4 +93,14 @@ public class Item {
     @NotNull
     @Column(name = "station3_result", nullable = false, length = 10)
     private String station3Result;
+
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "attention_flag", nullable = false)
+    private Boolean attentionFlag;
+
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "critical_flag", nullable = false)
+    private Boolean criticalFlag;
 }
