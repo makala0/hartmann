@@ -2,6 +2,7 @@ import React from 'react';
 import { Layout, Menu, Avatar, Dropdown } from 'antd';
 import {
     DashboardOutlined,
+    BarcodeOutlined,
     UserOutlined,
     LogoutOutlined,
 } from '@ant-design/icons';
@@ -51,8 +52,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user, onLogout }) => 
         {
             key: '/dashboard',
             icon: <DashboardOutlined />,
-            label: 'Dashboard',
+            label: 'Zakázky',
             onClick: () => navigate('/dashboard'),
+        },
+        {
+            key: '/inspection',
+            icon: <BarcodeOutlined />,
+            label: 'Režim kontroly',
+            onClick: () => navigate('/inspection'),
         },
     ];
 
@@ -75,10 +82,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user, onLogout }) => 
                         🏭 Hartmann
                     </div>
                     <Menu
-                        mode="vertical"
+                        mode="horizontal"
                         selectedKeys={[location.pathname]}
                         items={menuItems}
-                        style={{ flex: 1, border: 'none' }}
+                        style={{ flex: 1, border: 'none', minWidth: 260 }}
                     />
                 </div>
 
