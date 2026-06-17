@@ -146,6 +146,18 @@ public class OrderService {
         };
     }
 
+    public Map<String, Object> findScannedItem(Long orderNumber) {
+        Order order = orderRepository.findFirstByOrderNumber(orderNumber)
+                .orElseThrow(() -> new RuntimeException("Objednávka nenalezena pro kód: " + orderNumber));
+        Item item = itemRepository.findFirstByOrderNumberOrderByEndInspectionTimeDesc(orderNumber)
+                .orElseThrow(() -> new RuntimeException("Kus nenalezen pro kód: " + orderNumber));
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("orderId", order.getId());
+        result.put("item", convertToDto(item));
+        return result;
+    }
+
     public OrderDetailDto getOrderDetail(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Objednávka nenalezena: " + orderId));

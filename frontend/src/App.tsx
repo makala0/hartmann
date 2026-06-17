@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import OrderDetail from './pages/OrderDetail';
+import InspectionMode from './pages/InspectionMode';
 import MainLayout from './components/Layout/MainLayout';
 import apiClient from './api/client';
 import type { User } from './types';
@@ -66,6 +67,17 @@ const App: React.FC = () => {
                             <PrivateRoute user={user}>
                                 <MainLayout user={user || undefined} onLogout={() => setUser(null)}>
                                     <OrderDetail />
+                                </MainLayout>
+                            </PrivateRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/inspection"
+                        element={
+                            <PrivateRoute user={user}>
+                                <MainLayout user={user || undefined} onLogout={() => setUser(null)}>
+                                    <InspectionMode />
                                 </MainLayout>
                             </PrivateRoute>
                         }

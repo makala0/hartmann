@@ -7,11 +7,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ItemRepository extends JpaRepository<Item, Long>, JpaSpecificationExecutor<Item> {
 
     List<Item> findByOrderNumber(Long orderNumber);
 
+    Optional<Item> findFirstByOrderNumberOrderByEndInspectionTimeDesc(Long orderNumber);
 
     long countByOrderNumber(Long orderNumber);
 

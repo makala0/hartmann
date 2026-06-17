@@ -110,6 +110,15 @@ public class ApiController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/dashboard/scan/{orderNumber}")
+    public ResponseEntity<?> getScannedItem(@PathVariable Long orderNumber) {
+        try {
+            return ResponseEntity.ok(this.orderService.findScannedItem(orderNumber));
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping("/dashboard/order/{id}")
     public ResponseEntity<?> getOrderDetail(@PathVariable Long id) {
         try {

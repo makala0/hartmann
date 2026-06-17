@@ -221,8 +221,6 @@ const Dashboard: React.FC = () => {
 
     return (
         <div>
-            <h1 style={{ marginBottom: 24 }}>Zákazky</h1>
-
             {/* Statistiky */}
             <Row gutter={16} style={{ marginBottom: 24 }}>
                 <Col xs={24} sm={8}>
