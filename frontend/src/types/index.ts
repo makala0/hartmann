@@ -34,6 +34,8 @@ export interface Item {
     station1ImagePath: string;
     station2ImagePath: string;
     station3ImagePath: string;
+    attentionFlag: boolean;
+    criticalFlag: boolean;
 }
 
 export interface OrderDetailWithItems {
@@ -99,6 +101,14 @@ export interface OrderFilter {
     sku?: string;
     ref?: string;
     recipe?: string;
+    page?: number;
+    size?: number;
+}
+
+export interface ItemListFilter {
+    orderId?: number;
+    attentionFlag?: boolean;
+    criticalFlag?: boolean;
     page?: number;
     size?: number;
 }

@@ -110,6 +110,49 @@ public class ApiController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/dashboard/items")
+    public ResponseEntity<?> getItems(
+            @RequestParam(defaultValue = "0") Long orderId,
+            @RequestParam(required = false) Boolean attentionFlag,
+            @RequestParam(required = false) Boolean criticalFlag,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        ItemFilter filter = new ItemFilter();
+        filter.setOrderId(orderId);
+        filter.setAttentionFlag(attentionFlag);
+        filter.setCriticalFlag(criticalFlag);
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("endInspectionTime").descending());
+        Page<ItemDto> itemPage = this.orderService.searchItems(filter, pageable);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", itemPage.getContent());
+        response.put("totalElements", itemPage.getTotalElements());
+        response.put("totalPages", itemPage.getTotalPages());
+        response.put("currentPage", itemPage.getNumber());
+        response.put("size", itemPage.getSize());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/dashboard/item/{id}/flags")
+    public ResponseEntity<?> updateItemFlags(
+            @PathVariable Long id,
+            @RequestBody Map<String, Boolean> flags
+    ) {
+        try {
+            ItemDto item = this.orderService.updateItemFlags(
+                    id,
+                    flags.get("attentionFlag"),
+                    flags.get("criticalFlag")
+            );
+            return ResponseEntity.ok(item);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping("/dashboard/scan/{orderNumber}")
     public ResponseEntity<?> getScannedItem(@PathVariable Long orderNumber) {
         try {

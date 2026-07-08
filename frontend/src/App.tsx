@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import OrderDetail from './pages/OrderDetail';
 import InspectionMode from './pages/InspectionMode';
+import ItemsPage from './pages/ItemsPage';
 import MainLayout from './components/Layout/MainLayout';
 import apiClient from './api/client';
 import type { User } from './types';
@@ -72,6 +73,16 @@ const App: React.FC = () => {
                         }
                     />
 
+                    <Route
+                        path="/items"
+                        element={
+                            <PrivateRoute user={user}>
+                                <MainLayout user={user || undefined} onLogout={() => setUser(null)}>
+                                    <ItemsPage />
+                                </MainLayout>
+                            </PrivateRoute>
+                        }
+                    />
                     <Route
                         path="/inspection"
                         element={

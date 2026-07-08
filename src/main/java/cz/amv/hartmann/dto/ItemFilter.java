@@ -15,4 +15,7 @@ public class ItemFilter {
     private LocalDate dateTo;
     private String serialNumber;
     private String itemId;
+    private Long orderId;
+    private Boolean attentionFlag;
+    private Boolean criticalFlag;
 }

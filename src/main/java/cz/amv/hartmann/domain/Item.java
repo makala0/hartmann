@@ -94,11 +94,13 @@ public class Item {
     @Column(name = "station3_result", nullable = false, length = 10)
     private String station3Result;
 
+    @Setter
     @NotNull
     @ColumnDefault("0")
     @Column(name = "attention_flag", nullable = false)
     private Boolean attentionFlag;
 
+    @Setter
     @NotNull
     @ColumnDefault("0")
     @Column(name = "critical_flag", nullable = false)

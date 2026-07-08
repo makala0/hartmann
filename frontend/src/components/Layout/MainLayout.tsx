@@ -3,6 +3,7 @@ import { Layout, Menu, Avatar, Dropdown } from 'antd';
 import {
     DashboardOutlined,
     BarcodeOutlined,
+    DatabaseOutlined,
     UserOutlined,
     LogoutOutlined,
 } from '@ant-design/icons';
@@ -54,6 +55,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user, onLogout }) => 
             icon: <DashboardOutlined />,
             label: 'Zakázky',
             onClick: () => navigate('/dashboard'),
+        },
+        {
+            key: '/items',
+            icon: <DatabaseOutlined />,
+            label: 'Kusy',
+            onClick: () => navigate('/items'),
         },
         {
             key: '/inspection',

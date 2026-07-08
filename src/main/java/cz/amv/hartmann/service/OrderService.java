@@ -194,6 +194,10 @@ public class OrderService {
         return detail;
     }
 
+    public Page<ItemDto> searchItems(ItemFilter filter, Pageable pageable) {
+        return itemRepository.findAll(toItemSpecification(null, filter), pageable).map(this::convertToDto);
+    }
+
     public Page<Item> searchItemsInOrder(Long orderId, ItemFilter filter, Pageable pageable) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Objednávka nenalezena: " + orderId));
@@ -205,7 +209,21 @@ public class OrderService {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            predicates.add(cb.equal(root.get("orderNumber"), orderNumber));
+            if (orderNumber != null) {
+                predicates.add(cb.equal(root.get("orderNumber"), orderNumber));
+            }
+
+            if (filter.getOrderId() != null && filter.getOrderId() != 0L) {
+                predicates.add(cb.equal(root.get("orderId"), filter.getOrderId()));
+            }
+
+            if (filter.getAttentionFlag() != null) {
+                predicates.add(cb.equal(root.get("attentionFlag"), filter.getAttentionFlag()));
+            }
+
+            if (filter.getCriticalFlag() != null) {
+                predicates.add(cb.equal(root.get("criticalFlag"), filter.getCriticalFlag()));
+            }
 
             if (filter.getDefectType() != null && !filter.getDefectType().isEmpty()) {
                 predicates.add(cb.like(
@@ -307,6 +325,16 @@ public class OrderService {
         return getOrderDetailWithItems(orderId, filter, pageable);
     }
 
+    public ItemDto updateItemFlags(Long itemId, Boolean attentionFlag, Boolean criticalFlag) {
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Kus nenalezen: " + itemId));
+
+        item.setAttentionFlag(Boolean.TRUE.equals(attentionFlag));
+        item.setCriticalFlag(Boolean.TRUE.equals(criticalFlag));
+
+        return convertToDto(itemRepository.saveAndFlush(item));
+    }
+
     private ItemDto convertToDto(Item item) {
         ItemDto dto = new ItemDto();
         dto.setId(item.getId());
@@ -326,6 +354,8 @@ public class OrderService {
         dto.setStation1ImagePath(item.getStation1ImagePath());
         dto.setStation2ImagePath(item.getStation2ImagePath());
         dto.setStation3ImagePath(item.getStation3ImagePath());
+        dto.setAttentionFlag(item.getAttentionFlag());
+        dto.setCriticalFlag(item.getCriticalFlag());
         return dto;
     }
 }

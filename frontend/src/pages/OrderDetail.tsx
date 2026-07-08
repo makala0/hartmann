@@ -8,7 +8,6 @@ import {
     Button,
     Space,
     Tag,
-    Image,
     Typography,
     Descriptions,
     Divider,
@@ -31,7 +30,6 @@ import {
     FilterOutlined,
     SettingOutlined,
     CameraOutlined,
-    ExclamationCircleOutlined,
     SaveOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -39,119 +37,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import apiClient from '../api/client';
 import type { OrderDetailWithItems, Item } from '../types';
-import { getImageUrl } from '../utils/imageUtils';
+import ItemDetailContent from '../components/ItemDetailContent';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
-
-// Komponenta pro zobrazení obrázku s error handlingem
-const SafeImage: React.FC<{
-    imagePath: string;
-    alt: string;
-    width?: number | string;
-    height?: number | string;
-    style?: React.CSSProperties;
-    preview?: boolean;
-}> = ({ imagePath, alt, width = "100%", height = 200, style, preview = true }) => {
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(false);
-
-    const imageUrl = getImageUrl(imagePath);
-
-    const handleLoad = () => {
-        setLoading(false);
-        setError(false);
-    };
-
-    const handleError = () => {
-        setLoading(false);
-        setError(true);
-    };
-
-    if (!imageUrl || error) {
-        return (
-            <div
-                style={{
-                    width,
-                    height,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '2px dashed #d9d9d9',
-                    borderRadius: '6px',
-                    backgroundColor: '#fafafa',
-                    ...style
-                }}
-            >
-                <div style={{ textAlign: 'center', color: '#999' }}>
-                    <ExclamationCircleOutlined style={{ fontSize: '24px', marginBottom: '8px' }} />
-                    <div>Obrázek nedostupný</div>
-                    {imagePath && (
-                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                            {imagePath.split('/').pop()}
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div style={{ position: 'relative', width, height, ...style }}>
-            {loading && (
-                <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#f0f0f0',
-                    zIndex: 1
-                }}>
-                    <Spin size="large" />
-                </div>
-            )}
-            {preview ? (
-                <Image
-                    src={imageUrl}
-                    alt={alt}
-                    width={width}
-                    height={height}
-                    style={{
-                        objectFit: 'cover',
-                        border: '1px solid #d9d9d9',
-                        borderRadius: '6px',
-                        ...style
-                    }}
-                    onLoad={handleLoad}
-                    onError={handleError}
-                    preview={{
-                        mask: <div style={{ color: 'white' }}><EyeOutlined /> Náhled</div>
-                    }}
-                />
-            ) : (
-                <img
-                    src={imageUrl}
-                    alt={alt}
-                    style={{
-                        width,
-                        height,
-                        objectFit: 'cover',
-                        border: '1px solid #d9d9d9',
-                        borderRadius: '6px',
-                        ...style
-                    }}
-                    onLoad={handleLoad}
-                    onError={handleError}
-                />
-            )}
-        </div>
-    );
-};
 
 interface ItemFilter {
     defectType?: string;
@@ -701,97 +591,20 @@ const OrderDetail: React.FC = () => {
                 width="100vw"
             >
                 {selectedItem && (
-                    <Row gutter={[24, 24]} align="top">
-                        <Col xs={24} flex="0 0 560px" style={{ maxWidth: '100%' }}>
-                            <Space direction="vertical" style={{ width: '100%' }} size="large">
-                                <Descriptions title="Základní informace" column={1} size="middle" bordered>
-                                    <Descriptions.Item label="ID Kusu">
-                                        <Text code copyable={{ text: selectedItem.itemId }}>
-                                            {selectedItem.itemId}
-                                        </Text>
-                                    </Descriptions.Item>
-                                    <Descriptions.Item label="Sériové číslo">
-                                        {selectedItem.serialNumber}
-                                    </Descriptions.Item>
-                                    <Descriptions.Item label="Čas kontroly">
-                                        {dayjs(selectedItem.endInspectionTime).format('DD.MM.YYYY HH:mm:ss')}
-                                    </Descriptions.Item>
-                                    <Descriptions.Item label="Kamera">
-                                        <Badge count={selectedItem.cameraNumber} showZero style={{ backgroundColor: '#108ee9' }}>
-                                            <CameraOutlined style={{ fontSize: '18px' }} />
-                                        </Badge>
-                                    </Descriptions.Item>
-                                    <Descriptions.Item label="Typ defektu">
-                                        {selectedItem.defectType === 'N/A' || !selectedItem.defectType ? (
-                                            <Text type="secondary">Bez defektu</Text>
-                                        ) : (
-                                            <Tag color="orange">{selectedItem.defectType}</Tag>
-                                        )}
-                                    </Descriptions.Item>
-                                </Descriptions>
-
-                                <Card title="Výsledky kontrol" size="small">
-                                    <Row gutter={[16, 16]}>
-                                        {[
-                                            { num: 1, result: selectedItem.station1Result },
-                                            { num: 2, result: selectedItem.station2Result },
-                                            { num: 3, result: selectedItem.station3Result },
-                                        ].map(({ num, result }) => (
-                                            <Col span={8} key={num}>
-                                                <Card size="small" style={{ textAlign: 'center' }}>
-                                                    <Text type="secondary">Stanice {num}</Text>
-                                                    <div style={{ marginTop: 8 }}>
-                                                        <Tag
-                                                            color={getStatusColor(result)}
-                                                            icon={getStatusIcon(result)}
-                                                            style={{ fontSize: '14px', padding: '4px 8px' }}
-                                                        >
-                                                            {result}
-                                                        </Tag>
-                                                    </div>
-                                                </Card>
-                                            </Col>
-                                        ))}
-                                    </Row>
-                                    <Divider />
-                                    <div style={{ textAlign: 'center' }}>
-                                        <Text strong style={{ fontSize: '16px' }}>Celkový výsledek:</Text>
-                                        <div style={{ marginTop: 8 }}>
-                                            <Tag
-                                                color={getStatusColor(selectedItem.totalResult)}
-                                                icon={getStatusIcon(selectedItem.totalResult)}
-                                                style={{ fontSize: '18px', padding: '8px 16px' }}
-                                            >
-                                                {selectedItem.totalResult}
-                                            </Tag>
-                                        </div>
-                                    </div>
-                                </Card>
-                            </Space>
-                        </Col>
-                        <Col xs={24} flex="1 1 600px" style={{ minWidth: 0 }}>
-                            <Card title="Obrázky ze stanic" size="small">
-                                <Row gutter={[16, 16]}>
-                                    {[
-                                        { label: 'Stanice 1', path: selectedItem.station1ImagePath },
-                                        { label: 'Stanice 2', path: selectedItem.station2ImagePath },
-                                        { label: 'Stanice 3', path: selectedItem.station3ImagePath },
-                                    ].map(({ label, path }, index) => (
-                                        <Col xs={24} xl={8} key={index}>
-                                            <Card size="small" title={label}>
-                                                <SafeImage
-                                                    imagePath={path}
-                                                    alt={label}
-                                                    height="clamp(280px, 42vh, 560px)"
-                                                    preview={true}
-                                                />
-                                            </Card>
-                                        </Col>
-                                    ))}
-                                </Row>
-                            </Card>
-                        </Col>
-                    </Row>
+                    <ItemDetailContent
+                        item={selectedItem}
+                        onItemChange={(updatedItem) => {
+                            setSelectedItem(updatedItem);
+                            setFilteredItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
+                            setOrderDetail(prev => prev
+                                ? {
+                                    ...prev,
+                                    items: prev.items.map(item => item.id === updatedItem.id ? updatedItem : item),
+                                }
+                                : prev
+                            );
+                        }}
+                    />
                 )}
             </Drawer>
         </div>

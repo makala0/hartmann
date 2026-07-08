@@ -1,4 +1,3 @@
-
 package cz.amv.hartmann.dto;
 
 import lombok.Data;
@@ -24,4 +23,6 @@ public class ItemDto {
     private String station1ImagePath;
     private String station2ImagePath;
     private String station3ImagePath;
+    private Boolean attentionFlag;
+    private Boolean criticalFlag;
 }
