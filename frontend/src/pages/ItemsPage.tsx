@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Card, Checkbox, Col, Drawer, InputNumber, Row, Space, Table, Tag } from 'antd';
-import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, SearchOutlined, ToolOutlined } from '@ant-design/icons';
+import { AlertOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, ReloadOutlined, SearchOutlined, ToolOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import apiClient from '../api/client';
@@ -127,7 +127,7 @@ const ItemsPage: React.FC = () => {
             ),
         },
         {
-            title: 'Attention',
+            title: 'Varování',
             dataIndex: 'attentionFlag',
             key: 'attentionFlag',
             align: 'center',
@@ -135,7 +135,7 @@ const ItemsPage: React.FC = () => {
             render: (value: boolean) => <Tag color={value ? 'warning' : 'default'}>{value ? 'Ano' : 'Ne'}</Tag>,
         },
         {
-            title: 'Critical',
+            title: 'Kritická',
             dataIndex: 'criticalFlag',
             key: 'criticalFlag',
             align: 'center',
@@ -186,26 +186,39 @@ const ItemsPage: React.FC = () => {
                         />
                     </Col>
                     <Col xs={24} sm={12} md={8}>
-                        <Checkbox
-                            checked={filter.attentionFlag === true}
-                            onChange={(event) => setFilter({
-                                ...filter,
-                                attentionFlag: event.target.checked ? true : undefined,
-                            })}
+                        <label>Příznaky:</label>
+                        <div
+                            style={{
+                                display: 'flex',
+                                gap: 12,
+                                alignItems: 'center',
+                                width: '100%',
+                                padding: '5px 10px',
+                                border: '1px solid #d9d9d9',
+                                borderRadius: 8,
+                                background: '#fff',
+                                justifyContent: 'space-between',
+                            }}
                         >
-                            Attention flag
-                        </Checkbox>
-                    </Col>
-                    <Col xs={24} sm={12} md={8}>
-                        <Checkbox
-                            checked={filter.criticalFlag === true}
-                            onChange={(event) => setFilter({
-                                ...filter,
-                                criticalFlag: event.target.checked ? true : undefined,
-                            })}
-                        >
-                            Critical flag
-                        </Checkbox>
+                            <Checkbox
+                                checked={filter.attentionFlag === true}
+                                onChange={(event) => setFilter({
+                                    ...filter,
+                                    attentionFlag: event.target.checked ? true : undefined,
+                                })}
+                            >
+                                <ExclamationCircleOutlined style={{ color: '#d48806' }} /> Varování
+                            </Checkbox>
+                            <Checkbox
+                                checked={filter.criticalFlag === true}
+                                onChange={(event) => setFilter({
+                                    ...filter,
+                                    criticalFlag: event.target.checked ? true : undefined,
+                                })}
+                            >
+                                <AlertOutlined style={{ color: '#cf1322' }} /> Kritická
+                            </Checkbox>
+                        </div>
                     </Col>
                 </Row>
                 <Row gutter={[16, 16]} style={{ marginTop: 16 }}>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Badge, Card, Checkbox, Col, Descriptions, Divider, Image, Row, Space, Spin, Tag, Typography, message } from 'antd';
-import { CameraOutlined, CheckCircleOutlined, CloseCircleOutlined, ToolOutlined } from '@ant-design/icons';
+import { AlertOutlined, CameraOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, ToolOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import apiClient from '../api/client';
 import type { Item } from '../types';
@@ -121,6 +121,77 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
         }
     };
 
+    const flagControls = (
+        <Card
+            size="small"
+            title="Označení kusu"
+            extra={<Text type="secondary">Ruční priorita kontroly</Text>}
+            style={{ borderRadius: 12 }}
+            styles={{ body: { padding: 12 } }}
+        >
+            <Row gutter={[12, 12]}>
+                <Col xs={24} sm={12}>
+                    <label
+                        style={{
+                            display: 'flex',
+                            gap: 12,
+                            alignItems: 'center',
+                            minHeight: 72,
+                            padding: '12px 14px',
+                            border: `1px solid ${item.attentionFlag ? '#faad14' : '#f0f0f0'}`,
+                            borderRadius: 12,
+                            background: item.attentionFlag ? '#fffbe6' : '#fafafa',
+                            cursor: savingFlag === null ? 'pointer' : 'not-allowed',
+                            transition: 'all 0.2s ease',
+                        }}
+                    >
+                        <Checkbox
+                            checked={item.attentionFlag}
+                            disabled={savingFlag !== null}
+                            onChange={(event) => updateFlags({
+                                attentionFlag: event.target.checked,
+                                criticalFlag: item.criticalFlag,
+                            }, 'attentionFlag')}
+                        />
+                        <Space direction="vertical" size={0}>
+                            <Text strong><ExclamationCircleOutlined style={{ color: '#d48806' }} /> Varování</Text>
+                            <Text type="secondary" style={{ fontSize: 12 }}>Vyžaduje zvýšenou pozornost</Text>
+                        </Space>
+                    </label>
+                </Col>
+                <Col xs={24} sm={12}>
+                    <label
+                        style={{
+                            display: 'flex',
+                            gap: 12,
+                            alignItems: 'center',
+                            minHeight: 72,
+                            padding: '12px 14px',
+                            border: `1px solid ${item.criticalFlag ? '#ff4d4f' : '#f0f0f0'}`,
+                            borderRadius: 12,
+                            background: item.criticalFlag ? '#fff1f0' : '#fafafa',
+                            cursor: savingFlag === null ? 'pointer' : 'not-allowed',
+                            transition: 'all 0.2s ease',
+                        }}
+                    >
+                        <Checkbox
+                            checked={item.criticalFlag}
+                            disabled={savingFlag !== null}
+                            onChange={(event) => updateFlags({
+                                attentionFlag: item.attentionFlag,
+                                criticalFlag: event.target.checked,
+                            }, 'criticalFlag')}
+                        />
+                        <Space direction="vertical" size={0}>
+                            <Text strong><AlertOutlined style={{ color: '#cf1322' }} /> Kritická</Text>
+                            <Text type="secondary" style={{ fontSize: 12 }}>Kritický kus k prioritnímu řešení</Text>
+                        </Space>
+                    </label>
+                </Col>
+            </Row>
+        </Card>
+    );
+
     return (
         <Row gutter={[24, 24]} align="top">
             <Col xs={24} flex="0 0 560px" style={{ maxWidth: '100%' }}>
@@ -160,30 +231,6 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                             ) : (
                                 <Tag color="orange">{item.defectType}</Tag>
                             )}
-                        </Descriptions.Item>
-                        <Descriptions.Item label="Attention flag">
-                            <Checkbox
-                                checked={item.attentionFlag}
-                                disabled={savingFlag !== null}
-                                onChange={(event) => updateFlags({
-                                    attentionFlag: event.target.checked,
-                                    criticalFlag: item.criticalFlag,
-                                }, 'attentionFlag')}
-                            >
-                                Označit attention
-                            </Checkbox>
-                        </Descriptions.Item>
-                        <Descriptions.Item label="Critical flag">
-                            <Checkbox
-                                checked={item.criticalFlag}
-                                disabled={savingFlag !== null}
-                                onChange={(event) => updateFlags({
-                                    attentionFlag: item.attentionFlag,
-                                    criticalFlag: event.target.checked,
-                                }, 'criticalFlag')}
-                            >
-                                Označit critical
-                            </Checkbox>
                         </Descriptions.Item>
                     </Descriptions>
 
@@ -227,26 +274,29 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                 </Space>
             </Col>
             <Col xs={24} flex="1 1 600px" style={{ minWidth: 0 }}>
-                <Card title="Obrázky ze stanic" size="small">
-                    <Row gutter={[16, 16]}>
-                        {[
-                            { label: 'Stanice 1', path: item.station1ImagePath },
-                            { label: 'Stanice 2', path: item.station2ImagePath },
-                            { label: 'Stanice 3', path: item.station3ImagePath },
-                        ].map(({ label, path }, index) => (
-                            <Col xs={24} xl={8} key={index}>
-                                <Card size="small" title={label}>
-                                    <SafeImage
-                                        imagePath={path}
-                                        alt={label}
-                                        height="clamp(280px, 42vh, 560px)"
-                                        preview={true}
-                                    />
-                                </Card>
-                            </Col>
-                        ))}
-                    </Row>
-                </Card>
+                <Space direction="vertical" style={{ width: '100%' }} size="large">
+                    <Card title="Obrázky ze stanic" size="small">
+                        <Row gutter={[16, 16]}>
+                            {[
+                                { label: 'Stanice 1', path: item.station1ImagePath },
+                                { label: 'Stanice 2', path: item.station2ImagePath },
+                                { label: 'Stanice 3', path: item.station3ImagePath },
+                            ].map(({ label, path }, index) => (
+                                <Col xs={24} xl={8} key={index}>
+                                    <Card size="small" title={label}>
+                                        <SafeImage
+                                            imagePath={path}
+                                            alt={label}
+                                            height="clamp(280px, 42vh, 560px)"
+                                            preview={true}
+                                        />
+                                    </Card>
+                                </Col>
+                            ))}
+                        </Row>
+                    </Card>
+                    {flagControls}
+                </Space>
             </Col>
         </Row>
     );
