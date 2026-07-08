@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,10 +21,19 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ItemRepository itemRepository;
+    private final AppUserService appUserService;
+    private final CriticalItemNotificationService criticalItemNotificationService;
 
-    public OrderService(OrderRepository orderRepository, ItemRepository itemRepository) {
+    public OrderService(
+            OrderRepository orderRepository,
+            ItemRepository itemRepository,
+            AppUserService appUserService,
+            CriticalItemNotificationService criticalItemNotificationService
+    ) {
         this.orderRepository = orderRepository;
         this.itemRepository = itemRepository;
+        this.appUserService = appUserService;
+        this.criticalItemNotificationService = criticalItemNotificationService;
     }
 
     public Map<String, Object> getDashboardStats(List<Order> filteredOrders, long totalRecipes) {
@@ -325,14 +335,25 @@ public class OrderService {
         return getOrderDetailWithItems(orderId, filter, pageable);
     }
 
-    public ItemDto updateItemFlags(Long itemId, Boolean attentionFlag, Boolean criticalFlag) {
+    @Transactional
+    public ItemDto updateItemFlags(Long itemId, Boolean attentionFlag, Boolean criticalFlag, String changedByEmail) {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new RuntimeException("Kus nenalezen: " + itemId));
+        boolean wasCritical = Boolean.TRUE.equals(item.getCriticalFlag());
+        boolean shouldBeCritical = Boolean.TRUE.equals(criticalFlag);
 
         item.setAttentionFlag(Boolean.TRUE.equals(attentionFlag));
-        item.setCriticalFlag(Boolean.TRUE.equals(criticalFlag));
+        item.setCriticalFlag(shouldBeCritical);
 
-        return convertToDto(itemRepository.saveAndFlush(item));
+        Item savedItem = itemRepository.saveAndFlush(item);
+        if (!wasCritical && shouldBeCritical) {
+            criticalItemNotificationService.notifyCriticalFlagEnabled(
+                    savedItem,
+                    appUserService.findByEmail(changedByEmail)
+            );
+        }
+
+        return convertToDto(savedItem);
     }
 
     private ItemDto convertToDto(Item item) {
