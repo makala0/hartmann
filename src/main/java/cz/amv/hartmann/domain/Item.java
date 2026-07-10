@@ -23,7 +23,6 @@ public class Item {
     @Column(name = "item_id", nullable = false, length = 50)
     private String itemId;
 
-    @Size(max = 50)
     @NotNull
     @Column(name = "serial_number", nullable = false, length = 50)
     private String serialNumber;
@@ -63,17 +62,14 @@ public class Item {
     @Column(name = "total_result", nullable = false, length = 10)
     private String totalResult;
 
-    @Size(max = 50)
     @NotNull
     @Column(name = "station1_image_path", nullable = false, length = 50)
     private String station1ImagePath;
 
-    @Size(max = 50)
     @NotNull
     @Column(name = "station2_image_path", nullable = false, length = 50)
     private String station2ImagePath;
 
-    @Size(max = 50)
     @NotNull
     @Column(name = "station3_image_path", nullable = false, length = 50)
     private String station3ImagePath;
