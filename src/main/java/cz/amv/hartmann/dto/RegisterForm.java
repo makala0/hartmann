@@ -20,4 +20,6 @@ public class RegisterForm {
 
     @NotBlank(message = "Potvrzení hesla je povinné")
     private String confirmPassword;
+
+    private String role = "ROLE_WORKER";
 }

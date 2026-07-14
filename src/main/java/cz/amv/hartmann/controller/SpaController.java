@@ -40,4 +40,9 @@ public class SpaController {
     public String inspection() {
         return "forward:/index.html";
     }
+
+    @GetMapping("/users")
+    public String users() {
+        return "forward:/index.html";
+    }
 }
