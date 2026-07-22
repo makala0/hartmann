@@ -90,6 +90,13 @@ export interface DashboardStats {
 export interface User {
     email: string;
     authorities: string[];
+    role?: string;
+}
+
+export interface AppUser {
+    id: number;
+    email: string;
+    role: string;
 }
 
 export interface OrderFilter {

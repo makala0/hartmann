@@ -154,7 +154,7 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                             }, 'attentionFlag')}
                         />
                         <Space direction="vertical" size={0}>
-                            <Text strong><ExclamationCircleOutlined style={{ color: '#d48806' }} /> Attention</Text>
+                            <Text strong><ExclamationCircleOutlined style={{ color: '#d48806' }} /> Varování</Text>
                             <Text type="secondary" style={{ fontSize: 12 }}>Vyžaduje zvýšenou pozornost</Text>
                         </Space>
                     </label>
@@ -183,7 +183,7 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                             }, 'criticalFlag')}
                         />
                         <Space direction="vertical" size={0}>
-                            <Text strong><AlertOutlined style={{ color: '#cf1322' }} /> Critical</Text>
+                            <Text strong><AlertOutlined style={{ color: '#cf1322' }} /> Kritická</Text>
                             <Text type="secondary" style={{ fontSize: 12 }}>Kritický kus k prioritnímu řešení</Text>
                         </Space>
                     </label>

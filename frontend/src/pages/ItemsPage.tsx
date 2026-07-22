@@ -127,7 +127,7 @@ const ItemsPage: React.FC = () => {
             ),
         },
         {
-            title: 'Attention',
+            title: 'Varování',
             dataIndex: 'attentionFlag',
             key: 'attentionFlag',
             align: 'center',
@@ -135,7 +135,7 @@ const ItemsPage: React.FC = () => {
             render: (value: boolean) => <Tag color={value ? 'warning' : 'default'}>{value ? 'Ano' : 'Ne'}</Tag>,
         },
         {
-            title: 'Critical',
+            title: 'Kritická',
             dataIndex: 'criticalFlag',
             key: 'criticalFlag',
             align: 'center',
@@ -207,7 +207,7 @@ const ItemsPage: React.FC = () => {
                                     attentionFlag: event.target.checked ? true : undefined,
                                 })}
                             >
-                                <ExclamationCircleOutlined style={{ color: '#d48806' }} /> Attention
+                                <ExclamationCircleOutlined style={{ color: '#d48806' }} /> Varování
                             </Checkbox>
                             <Checkbox
                                 checked={filter.criticalFlag === true}
@@ -216,7 +216,7 @@ const ItemsPage: React.FC = () => {
                                     criticalFlag: event.target.checked ? true : undefined,
                                 })}
                             >
-                                <AlertOutlined style={{ color: '#cf1322' }} /> Critical
+                                <AlertOutlined style={{ color: '#cf1322' }} /> Kritická
                             </Checkbox>
                         </div>
                     </Col>

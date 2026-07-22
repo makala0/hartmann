@@ -32,10 +32,52 @@ public class ApiController {
     private final OrderService orderService;
 
     @PostMapping("/auth/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterForm registerForm) {
+    public ResponseEntity<?> register(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody RegisterForm registerForm
+    ) {
+        if (appUserService.hasAnyManager() && !appUserService.isManager(userDetails)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Účty může spravovat pouze Admin nebo Servis."));
+        }
+
         try {
-            appUserService.registerNewUser(registerForm);
-            return ResponseEntity.ok(Map.of("message", "Registrace proběhla úspěšně"));
+            if (!appUserService.hasAnyManager()) {
+                registerForm.setRole(AppUserService.ROLE_ADMIN);
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Uživatel byl úspěšně vytvořen",
+                    "user", appUserService.registerNewUser(registerForm)
+            ));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<?> getUsers(@AuthenticationPrincipal UserDetails userDetails) {
+        if (!appUserService.isManager(userDetails)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Seznam uživatelů může zobrazit pouze Admin nebo Servis."));
+        }
+
+        return ResponseEntity.ok(appUserService.findAllUsers());
+    }
+
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<?> deleteUser(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id
+    ) {
+        if (!appUserService.isManager(userDetails)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Účty může spravovat pouze Admin nebo Servis."));
+        }
+
+        try {
+            appUserService.deleteUser(id, userDetails.getUsername());
+            return ResponseEntity.ok(Map.of("message", "Uživatel byl odebrán"));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
         }
@@ -46,9 +88,16 @@ public class ApiController {
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
+        List<String> authorities = userDetails.getAuthorities().stream()
+                .map(authority -> authority.getAuthority())
+                .toList();
+
+        String role = appUserService.getRoleByEmail(userDetails.getUsername());
+
         return ResponseEntity.ok(Map.of(
                 "email", userDetails.getUsername(),
-                "authorities", userDetails.getAuthorities()
+                "authorities", authorities,
+                "role", role
         ));
     }
 

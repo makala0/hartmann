@@ -30,4 +30,19 @@ public class SpaController {
     public String profile() {
         return "forward:/index.html";
     }
+
+    @GetMapping("/items")
+    public String items() {
+        return "forward:/index.html";
+    }
+
+    @GetMapping("/inspection")
+    public String inspection() {
+        return "forward:/index.html";
+    }
+
+    @GetMapping("/users")
+    public String users() {
+        return "forward:/index.html";
+    }
 }

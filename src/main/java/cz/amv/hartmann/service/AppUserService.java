@@ -1,9 +1,10 @@
 package cz.amv.hartmann.service;
 
 import cz.amv.hartmann.domain.AppUser;
-import cz.amv.hartmann.dto.CriticalNotificationSettingsDto;
+import cz.amv.hartmann.dto.AppUserDto;
 import cz.amv.hartmann.dto.RegisterForm;
 import cz.amv.hartmann.repository.AppUserRepository;
+import java.util.List;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -18,6 +19,13 @@ import java.util.List;
 @Service
 public class AppUserService implements UserDetailsService {
 
+    public static final String ROLE_ADMIN = "ROLE_ADMIN";
+    public static final String ROLE_WORKER = "ROLE_WORKER";
+    public static final String ROLE_SERVICE = "ROLE_SERVICE";
+
+    private static final List<String> MANAGER_ROLES = List.of(ROLE_ADMIN, ROLE_SERVICE);
+    private static final List<String> ALLOWED_ROLES = List.of(ROLE_ADMIN, ROLE_WORKER, ROLE_SERVICE);
+
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -26,15 +34,51 @@ public class AppUserService implements UserDetailsService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public void registerNewUser(RegisterForm form) {
-        if (appUserRepository.existsByEmail(form.getEmail())) {
+    @Transactional
+    public AppUserDto registerNewUser(RegisterForm form) {
+        if (appUserRepository.existsByEmail(form.getEmail().trim().toLowerCase())) {
             throw new IllegalArgumentException("Uživatel s tímto e-mailem už existuje.");
         }
 
         AppUser appUser = new AppUser();
         appUser.setEmail(form.getEmail().trim().toLowerCase());
         appUser.setPassword(passwordEncoder.encode(form.getPassword()));
-        appUserRepository.save(appUser);
+        appUser.setRole(resolveRole(form.getRole()));
+        return AppUserDto.from(appUserRepository.save(appUser));
+    }
+
+    public List<AppUserDto> findAllUsers() {
+        return appUserRepository.findAll().stream()
+            .map(AppUserDto::from)
+            .toList();
+    }
+
+    @Transactional
+    public void deleteUser(Long id, String currentUserEmail) {
+        AppUser appUser = appUserRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Uživatel nebyl nalezen."));
+
+        if (appUser.getEmail().equalsIgnoreCase(currentUserEmail)) {
+            throw new IllegalArgumentException("Nemůžete odebrat vlastní účet.");
+        }
+
+        appUserRepository.delete(appUser);
+    }
+
+    public boolean hasAnyManager() {
+        return appUserRepository.countByRoleIn(MANAGER_ROLES) > 0;
+    }
+
+    public boolean isManager(UserDetails userDetails) {
+        if (userDetails == null) {
+            return false;
+        }
+
+        return MANAGER_ROLES.contains(getRoleByEmail(userDetails.getUsername()));
+    }
+
+    public String getRoleByEmail(String email) {
+        return normalizeLegacyRole(findByEmail(email).getRole());
     }
 
     public AppUser findByEmail(String email) {
@@ -90,7 +134,25 @@ public class AppUserService implements UserDetailsService {
         return User.builder()
             .username(appUser.getEmail())
             .password(appUser.getPassword())
-            .roles(appUser.getRole().replace("ROLE_", ""))
+            .roles(normalizeLegacyRole(appUser.getRole()).replace("ROLE_", ""))
             .build();
+    }
+
+    private String resolveRole(String role) {
+        String normalizedRole = role == null || role.isBlank() ? ROLE_WORKER : role;
+        if (!normalizedRole.startsWith("ROLE_")) {
+            normalizedRole = "ROLE_" + normalizedRole;
+        }
+        normalizedRole = normalizeLegacyRole(normalizedRole.toUpperCase());
+
+        if (!ALLOWED_ROLES.contains(normalizedRole)) {
+            throw new IllegalArgumentException("Neplatná role uživatele.");
+        }
+
+        return normalizedRole;
+    }
+
+    private String normalizeLegacyRole(String role) {
+        return "ROLE_USER".equals(role) ? ROLE_WORKER : role;
     }
 }

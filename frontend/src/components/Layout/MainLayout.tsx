@@ -7,15 +7,16 @@ import {
     UserOutlined,
     LogoutOutlined,
 } from '@ant-design/icons';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import type { MenuProps } from 'antd';
+import type { User } from '../../types';
 import apiClient from '../../api/client';
 
 const { Header, Content, Footer } = Layout;
 
 interface MainLayoutProps {
     children: React.ReactNode;
-    user?: { email: string };
+    user?: User;
     onLogout?: () => void;
 }
 
@@ -32,6 +33,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user, onLogout }) => 
             console.error('Logout failed:', error);
         }
     };
+
+    const canManageUsers = user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_SERVICE';
 
     const userMenuItems: MenuProps['items'] = [
         {
@@ -53,21 +56,23 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user, onLogout }) => 
         {
             key: '/dashboard',
             icon: <DashboardOutlined />,
-            label: 'Zakázky',
-            onClick: () => navigate('/dashboard'),
+            label: <Link to="/dashboard">Zakázky</Link>,
         },
         {
             key: '/items',
             icon: <DatabaseOutlined />,
-            label: 'Kusy',
-            onClick: () => navigate('/items'),
+            label: <Link to="/items">Kusy</Link>,
         },
         {
             key: '/inspection',
             icon: <BarcodeOutlined />,
-            label: 'Režim kontroly',
-            onClick: () => navigate('/inspection'),
+            label: <Link to="/inspection">Režim kontroly</Link>,
         },
+        ...(canManageUsers ? [{
+            key: '/users',
+            icon: <UserOutlined />,
+            label: <Link to="/users">Uživatelé</Link>,
+        }] : []),
     ];
 
     return (

@@ -12,6 +12,7 @@ import ItemsPage from './pages/ItemsPage';
 import MainLayout from './components/Layout/MainLayout';
 import apiClient from './api/client';
 import type { User } from './types';
+import Users from "./pages/Users";
 
 const PrivateRoute: React.FC<{ children: React.ReactNode; user: User | null }> = ({
                                                                                       children,
@@ -89,6 +90,16 @@ const App: React.FC = () => {
                             <PrivateRoute user={user}>
                                 <MainLayout user={user || undefined} onLogout={() => setUser(null)}>
                                     <InspectionMode />
+                                </MainLayout>
+                            </PrivateRoute>
+                        }
+                    />
+                    <Route
+                        path="/users"
+                        element={
+                            <PrivateRoute user={user}>
+                                <MainLayout user={user || undefined} onLogout={() => setUser(null)}>
+                                    <Users />
                                 </MainLayout>
                             </PrivateRoute>
                         }
