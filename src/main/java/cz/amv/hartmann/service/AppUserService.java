@@ -2,6 +2,7 @@ package cz.amv.hartmann.service;
 
 import cz.amv.hartmann.domain.AppUser;
 import cz.amv.hartmann.dto.AppUserDto;
+import cz.amv.hartmann.dto.CriticalNotificationSettingsDto;
 import cz.amv.hartmann.dto.RegisterForm;
 import cz.amv.hartmann.repository.AppUserRepository;
 import java.util.List;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.List;
 
 @Service
 public class AppUserService implements UserDetailsService {
@@ -71,10 +71,10 @@ public class AppUserService implements UserDetailsService {
 
     public boolean isManager(UserDetails userDetails) {
         if (userDetails == null) {
-            return false;
+            return true;
         }
 
-        return MANAGER_ROLES.contains(getRoleByEmail(userDetails.getUsername()));
+        return !MANAGER_ROLES.contains(getRoleByEmail(userDetails.getUsername()));
     }
 
     public String getRoleByEmail(String email) {
