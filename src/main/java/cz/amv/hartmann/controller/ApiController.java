@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -36,7 +37,7 @@ public class ApiController {
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody RegisterForm registerForm
     ) {
-        if (appUserService.hasAnyManager() && !appUserService.isManager(userDetails)) {
+        if (appUserService.hasAnyManager() && appUserService.isManager(userDetails)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "Účty může spravovat pouze Admin nebo Servis."));
         }
@@ -57,7 +58,7 @@ public class ApiController {
 
     @GetMapping("/users")
     public ResponseEntity<?> getUsers(@AuthenticationPrincipal UserDetails userDetails) {
-        if (!appUserService.isManager(userDetails)) {
+        if (appUserService.isManager(userDetails)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "Seznam uživatelů může zobrazit pouze Admin nebo Servis."));
         }
@@ -70,7 +71,7 @@ public class ApiController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long id
     ) {
-        if (!appUserService.isManager(userDetails)) {
+        if (appUserService.isManager(userDetails)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "Účty může spravovat pouze Admin nebo Servis."));
         }
@@ -89,7 +90,7 @@ public class ApiController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         List<String> authorities = userDetails.getAuthorities().stream()
-                .map(authority -> authority.getAuthority())
+                .map(GrantedAuthority::getAuthority)
                 .toList();
 
         String role = appUserService.getRoleByEmail(userDetails.getUsername());
