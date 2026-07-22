@@ -13,6 +13,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 public class AppUserService implements UserDetailsService {
 
@@ -81,6 +84,36 @@ public class AppUserService implements UserDetailsService {
     public AppUser findByEmail(String email) {
         return appUserRepository.findByEmail(email)
             .orElseThrow(() -> new UsernameNotFoundException("Uživatel nebyl nalezen."));
+    }
+
+    @Transactional(readOnly = true)
+    public CriticalNotificationSettingsDto getCriticalNotificationSettings(String email) {
+        AppUser appUser = findByEmail(email);
+
+        CriticalNotificationSettingsDto settings = new CriticalNotificationSettingsDto();
+        settings.setCriticalNotificationsEnabled(appUser.getCriticalNotificationsEnabled());
+        settings.setCriticalNotificationEmails(List.copyOf(appUser.getCriticalNotificationEmails()));
+        return settings;
+    }
+
+    @Transactional
+    public CriticalNotificationSettingsDto updateCriticalNotificationSettings(
+            String email,
+            CriticalNotificationSettingsDto settings
+    ) {
+        AppUser appUser = findByEmail(email);
+        appUser.setCriticalNotificationsEnabled(settings.isCriticalNotificationsEnabled());
+        List<String> recipients = settings.getCriticalNotificationEmails() != null
+                ? settings.getCriticalNotificationEmails()
+                : List.of();
+        appUser.setCriticalNotificationEmails(new ArrayList<>(recipients.stream()
+                .map(String::trim)
+                .map(String::toLowerCase)
+                .filter(value -> !value.isBlank())
+                .distinct()
+                .toList()));
+
+        return getCriticalNotificationSettings(email);
     }
 
     @Transactional

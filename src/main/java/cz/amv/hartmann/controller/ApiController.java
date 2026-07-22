@@ -118,6 +118,20 @@ public class ApiController {
         }
     }
 
+
+    @GetMapping("/profile/critical-notifications")
+    public ResponseEntity<?> getCriticalNotificationSettings(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(appUserService.getCriticalNotificationSettings(userDetails.getUsername()));
+    }
+
+    @PutMapping("/profile/critical-notifications")
+    public ResponseEntity<?> updateCriticalNotificationSettings(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody CriticalNotificationSettingsDto settings
+    ) {
+        return ResponseEntity.ok(appUserService.updateCriticalNotificationSettings(userDetails.getUsername(), settings));
+    }
+
     @GetMapping("/dashboard/orders")
     public ResponseEntity<?> getOrders(
             @RequestParam(required = false) LocalDate dateFrom,
@@ -188,13 +202,15 @@ public class ApiController {
     @PutMapping("/dashboard/item/{id}/flags")
     public ResponseEntity<?> updateItemFlags(
             @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody Map<String, Boolean> flags
     ) {
         try {
             ItemDto item = this.orderService.updateItemFlags(
                     id,
                     flags.get("attentionFlag"),
-                    flags.get("criticalFlag")
+                    flags.get("criticalFlag"),
+                    userDetails.getUsername()
             );
             return ResponseEntity.ok(item);
         } catch (Exception e) {
