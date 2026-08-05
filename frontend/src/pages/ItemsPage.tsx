@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Card, Checkbox, Col, Drawer, InputNumber, Row, Space, Table, Tag } from 'antd';
-import { AlertOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, ReloadOutlined, SearchOutlined, ToolOutlined } from '@ant-design/icons';
+import { AlertOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, LeftOutlined, ReloadOutlined, RightOutlined, SearchOutlined, ToolOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import apiClient from '../api/client';
@@ -19,6 +19,23 @@ const ItemsPage: React.FC = () => {
     const [filter, setFilter] = useState<ItemListFilter>({});
     const [appliedFilter, setAppliedFilter] = useState<ItemListFilter>({});
     const { current: currentPage, pageSize } = pagination;
+
+    const selectedItemIndex = selectedItem
+        ? items.findIndex(item => item.id === selectedItem.id)
+        : -1;
+    const hasPreviousItem = selectedItemIndex > 0;
+    const hasNextItem = selectedItemIndex >= 0 && selectedItemIndex < items.length - 1;
+
+    const selectAdjacentItem = (direction: -1 | 1) => {
+        if (selectedItemIndex < 0) {
+            return;
+        }
+
+        const nextItem = items[selectedItemIndex + direction];
+        if (nextItem) {
+            setSelectedItem(nextItem);
+        }
+    };
 
     const fetchItems = useCallback(async () => {
         setLoading(true);
@@ -265,6 +282,24 @@ const ItemsPage: React.FC = () => {
 
             <Drawer
                 title={`Detail kusu ${selectedItem?.itemId || ''}`}
+                extra={selectedItem && (
+                    <Space>
+                        <Button
+                            icon={<LeftOutlined />}
+                            disabled={!hasPreviousItem}
+                            onClick={() => selectAdjacentItem(-1)}
+                        >
+                            Předchozí
+                        </Button>
+                        <Button
+                            icon={<RightOutlined />}
+                            disabled={!hasNextItem}
+                            onClick={() => selectAdjacentItem(1)}
+                        >
+                            Další
+                        </Button>
+                    </Space>
+                )}
                 placement="right"
                 open={Boolean(selectedItem)}
                 onClose={() => setSelectedItem(null)}

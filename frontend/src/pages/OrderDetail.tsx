@@ -24,6 +24,8 @@ import {
     CheckCircleOutlined,
     CloseCircleOutlined,
     ArrowLeftOutlined,
+    LeftOutlined,
+    RightOutlined,
     ToolOutlined,
     EyeOutlined,
     ReloadOutlined,
@@ -69,6 +71,23 @@ const OrderDetail: React.FC = () => {
     const [commentValue, setCommentValue] = useState('');
     const [savingComment, setSavingComment] = useState(false);
     const { current: currentPage, pageSize } = itemPagination;
+
+    const selectedItemIndex = selectedItem
+        ? filteredItems.findIndex(item => item.id === selectedItem.id)
+        : -1;
+    const hasPreviousItem = selectedItemIndex > 0;
+    const hasNextItem = selectedItemIndex >= 0 && selectedItemIndex < filteredItems.length - 1;
+
+    const selectAdjacentItem = (direction: -1 | 1) => {
+        if (selectedItemIndex < 0) {
+            return;
+        }
+
+        const nextItem = filteredItems[selectedItemIndex + direction];
+        if (nextItem) {
+            setSelectedItem(nextItem);
+        }
+    };
 
     useEffect(() => {
         const fetchOrderDetail = async () => {
@@ -582,6 +601,24 @@ const OrderDetail: React.FC = () => {
             {/* Drawer s detailem kusu - aktualizovaná část s obrázky */}
             <Drawer
                 title={`Detail kusu ${selectedItem?.itemId || ''}`}
+                extra={selectedItem && (
+                    <Space>
+                        <Button
+                            icon={<LeftOutlined />}
+                            disabled={!hasPreviousItem}
+                            onClick={() => selectAdjacentItem(-1)}
+                        >
+                            Předchozí
+                        </Button>
+                        <Button
+                            icon={<RightOutlined />}
+                            disabled={!hasNextItem}
+                            onClick={() => selectAdjacentItem(1)}
+                        >
+                            Další
+                        </Button>
+                    </Space>
+                )}
                 placement="right"
                 onClose={() => {
                     setDrawerVisible(false);
