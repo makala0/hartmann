@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Badge, Card, Checkbox, Col, Descriptions, Divider, Image, Row, Space, Spin, Tag, Typography, message } from 'antd';
+import { Badge, Card, Checkbox, Col, Descriptions, Divider, Image, Modal, Row, Space, Spin, Tag, Typography, message } from 'antd';
 import { AlertOutlined, CameraOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, ToolOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import apiClient from '../api/client';
@@ -177,10 +177,27 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                         <Checkbox
                             checked={item.criticalFlag}
                             disabled={savingFlag !== null}
-                            onChange={(event) => updateFlags({
-                                attentionFlag: item.attentionFlag,
-                                criticalFlag: event.target.checked,
-                            }, 'criticalFlag')}
+                            onChange={(event) => {
+                                const nextCriticalFlag = event.target.checked;
+                                const saveCriticalFlag = () => updateFlags({
+                                    attentionFlag: item.attentionFlag,
+                                    criticalFlag: nextCriticalFlag,
+                                }, 'criticalFlag');
+
+                                if (nextCriticalFlag && !item.criticalFlag) {
+                                    Modal.confirm({
+                                        title: 'Opravdu označit kus jako kritický?',
+                                        content: 'Po zaškrtnutí pole Kritická se ihned odešle e-mail vybraným adresátům.',
+                                        okText: 'Ano, označit a odeslat e-mail',
+                                        cancelText: 'Zrušit',
+                                        okButtonProps: { danger: true },
+                                        onOk: saveCriticalFlag,
+                                    });
+                                    return;
+                                }
+
+                                saveCriticalFlag();
+                            }}
                         />
                         <Space direction="vertical" size={0}>
                             <Text strong><AlertOutlined style={{ color: '#cf1322' }} /> Kritická</Text>

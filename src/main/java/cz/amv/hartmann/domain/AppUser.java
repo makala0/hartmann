@@ -45,4 +45,7 @@ public class AppUser {
     )
     @Column(name = "email")
     private List<String> criticalNotificationEmails = new ArrayList<>();
+
+    @Column(name = "critical_notification_recipient")
+    private Boolean criticalNotificationRecipient = false;
 }

@@ -24,13 +24,10 @@ public class CriticalItemNotificationService {
             .withZone(ZoneId.systemDefault());
 
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
+    private final AppUserService appUserService;
 
     public void notifyCriticalFlagEnabled(Item item, AppUser user) {
-        if (!user.getCriticalNotificationsEnabled()) {
-            return;
-        }
-
-        List<String> recipients = user.getCriticalNotificationEmails();
+        List<String> recipients = appUserService.findCriticalNotificationRecipientEmails();
         if (recipients == null || recipients.isEmpty()) {
             return;
         }
@@ -42,6 +39,7 @@ public class CriticalItemNotificationService {
         }
 
         SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("jaroslav.macala@amvtechnology.cz");
         message.setTo(recipients.toArray(String[]::new));
         message.setSubject("Kritický kus označen: " + item.getItemId());
         message.setText(buildMessage(item, user));

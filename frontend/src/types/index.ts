@@ -97,6 +97,12 @@ export interface AppUser {
     id: number;
     email: string;
     role: string;
+    criticalNotificationRecipient: boolean;
+}
+
+export interface CriticalNotificationSettings {
+    criticalNotificationsEnabled: boolean;
+    criticalNotificationEmails: string[];
 }
 
 export interface OrderFilter {

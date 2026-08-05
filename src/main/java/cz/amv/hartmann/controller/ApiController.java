@@ -120,17 +120,31 @@ public class ApiController {
     }
 
 
-    @GetMapping("/profile/critical-notifications")
+    @GetMapping("/critical-notifications")
     public ResponseEntity<?> getCriticalNotificationSettings(@AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(appUserService.getCriticalNotificationSettings(userDetails.getUsername()));
+        if (appUserService.isManager(userDetails)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Adresáty kritických upozornění může spravovat pouze Admin nebo Servis."));
+        }
+
+        return ResponseEntity.ok(appUserService.getCriticalNotificationSettings());
     }
 
-    @PutMapping("/profile/critical-notifications")
+    @PutMapping("/critical-notifications")
     public ResponseEntity<?> updateCriticalNotificationSettings(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody CriticalNotificationSettingsDto settings
     ) {
-        return ResponseEntity.ok(appUserService.updateCriticalNotificationSettings(userDetails.getUsername(), settings));
+        if (appUserService.isManager(userDetails)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Adresáty kritických upozornění může spravovat pouze Admin nebo Servis."));
+        }
+
+        try {
+            return ResponseEntity.ok(appUserService.updateCriticalNotificationSettings(settings));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        }
     }
 
     @GetMapping("/dashboard/orders")

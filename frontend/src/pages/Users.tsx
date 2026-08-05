@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Button, Card, Form, Input, message, Modal, Popconfirm, Select, Space, Table, Tag } from 'antd';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert, Button, Card, Form, Input, message, Modal, Popconfirm, Select, Space, Table, Tag } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import apiClient from '../api/client';
-import type { AppUser } from '../types';
+import type { AppUser, CriticalNotificationSettings } from '../types';
 
 const ROLE_OPTIONS = [
     { value: 'ROLE_WORKER', label: 'Pracovník' },
@@ -28,22 +28,29 @@ const Users: React.FC = () => {
     const [modalOpen, setModalOpen] = useState(false);
     const [saving, setSaving] = useState(false);
     const [form] = Form.useForm();
+    const [notificationForm] = Form.useForm<CriticalNotificationSettings>();
 
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
         setLoading(true);
         try {
             const response = await apiClient.get('/users');
             setUsers(response.data);
+            notificationForm.setFieldsValue({
+                criticalNotificationsEnabled: response.data.some((user: AppUser) => user.criticalNotificationRecipient),
+                criticalNotificationEmails: response.data
+                    .filter((user: AppUser) => user.criticalNotificationRecipient)
+                    .map((user: AppUser) => user.email),
+            });
         } catch (error: any) {
             message.error(error.response?.data?.error || 'Nepodařilo se načíst uživatele');
         } finally {
             setLoading(false);
         }
-    };
+    }, [notificationForm]);
 
     useEffect(() => {
         fetchUsers();
-    }, []);
+    }, [fetchUsers]);
 
     const createUser = async (values: { email: string; password: string; confirmPassword: string; role: string }) => {
         if (values.password !== values.confirmPassword) {
@@ -65,6 +72,24 @@ const Users: React.FC = () => {
         }
     };
 
+
+    const saveCriticalNotificationSettings = async (values: CriticalNotificationSettings) => {
+        setSaving(true);
+        try {
+            const selectedEmails = values.criticalNotificationEmails || [];
+            await apiClient.put('/critical-notifications', {
+                criticalNotificationsEnabled: selectedEmails.length > 0,
+                criticalNotificationEmails: selectedEmails,
+            });
+            message.success('Adresáti kritických upozornění byli uloženi');
+            fetchUsers();
+        } catch (error: any) {
+            message.error(error.response?.data?.error || 'Adresáty kritických upozornění se nepodařilo uložit');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const deleteUser = async (id: number) => {
         try {
             await apiClient.delete(`/users/${id}`);
@@ -76,6 +101,7 @@ const Users: React.FC = () => {
     };
 
     return (
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <Card
             title="Správa uživatelů"
             extra={
@@ -116,6 +142,36 @@ const Users: React.FC = () => {
                     },
                 ]}
             />
+
+            <Card title="Adresáti kritických upozornění" style={{ marginTop: 24 }}>
+                <Alert
+                    type="info"
+                    showIcon
+                    style={{ marginBottom: 20 }}
+                    message="Po zaškrtnutí Kritická u kusu se ihned odešle e-mail vybraným účtům."
+                    description="Adresáty lze vybrat pouze ze zaregistrovaných účtů. Správu má k dispozici role Admin a Servis."
+                />
+                <Form<CriticalNotificationSettings>
+                    form={notificationForm}
+                    layout="vertical"
+                    onFinish={saveCriticalNotificationSettings}
+                    initialValues={{ criticalNotificationsEnabled: false, criticalNotificationEmails: [] }}
+                >
+                    <Form.Item
+                        label="Příjemci e-mailu"
+                        name="criticalNotificationEmails"
+                        extra="Vyberte jeden nebo více existujících uživatelských účtů. Pokud není vybrán nikdo, e-maily se neodesílají."
+                    >
+                        <Select
+                            mode="multiple"
+                            allowClear
+                            placeholder="Vyberte registrované účty"
+                            options={users.map(user => ({ value: user.email, label: user.email }))}
+                        />
+                    </Form.Item>
+                    <Button type="primary" htmlType="submit" loading={saving}>Uložit adresáty</Button>
+                </Form>
+            </Card>
 
             <Modal
                 title="Přidat uživatele"
@@ -173,6 +229,7 @@ const Users: React.FC = () => {
                 </Form>
             </Modal>
         </Card>
+        </Space>
     );
 };
 

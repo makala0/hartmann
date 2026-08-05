@@ -14,7 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 
 @Service
 public class AppUserService implements UserDetailsService {
@@ -87,33 +86,55 @@ public class AppUserService implements UserDetailsService {
     }
 
     @Transactional(readOnly = true)
-    public CriticalNotificationSettingsDto getCriticalNotificationSettings(String email) {
-        AppUser appUser = findByEmail(email);
-
+    public CriticalNotificationSettingsDto getCriticalNotificationSettings() {
         CriticalNotificationSettingsDto settings = new CriticalNotificationSettingsDto();
-        settings.setCriticalNotificationsEnabled(appUser.getCriticalNotificationsEnabled());
-        settings.setCriticalNotificationEmails(List.copyOf(appUser.getCriticalNotificationEmails()));
+        List<String> recipients = appUserRepository.findByCriticalNotificationRecipientTrue().stream()
+                .map(AppUser::getEmail)
+                .sorted()
+                .toList();
+
+        settings.setCriticalNotificationsEnabled(!recipients.isEmpty());
+        settings.setCriticalNotificationEmails(recipients);
         return settings;
     }
 
     @Transactional
-    public CriticalNotificationSettingsDto updateCriticalNotificationSettings(
-            String email,
-            CriticalNotificationSettingsDto settings
-    ) {
-        AppUser appUser = findByEmail(email);
-        appUser.setCriticalNotificationsEnabled(settings.isCriticalNotificationsEnabled());
+    public CriticalNotificationSettingsDto updateCriticalNotificationSettings(CriticalNotificationSettingsDto settings) {
         List<String> recipients = settings.getCriticalNotificationEmails() != null
                 ? settings.getCriticalNotificationEmails()
                 : List.of();
-        appUser.setCriticalNotificationEmails(new ArrayList<>(recipients.stream()
+        List<String> normalizedRecipients = recipients.stream()
                 .map(String::trim)
                 .map(String::toLowerCase)
                 .filter(value -> !value.isBlank())
                 .distinct()
-                .toList()));
+                .toList();
 
-        return getCriticalNotificationSettings(email);
+        List<AppUser> users = appUserRepository.findAll();
+        List<String> registeredEmails = users.stream()
+                .map(AppUser::getEmail)
+                .map(String::toLowerCase)
+                .toList();
+        List<String> unknownEmails = normalizedRecipients.stream()
+                .filter(email -> !registeredEmails.contains(email))
+                .toList();
+
+        if (!unknownEmails.isEmpty()) {
+            throw new IllegalArgumentException("Adresáty lze vybrat pouze ze zaregistrovaných účtů: " + String.join(", ", unknownEmails));
+        }
+
+        users.forEach(user -> user.setCriticalNotificationRecipient(normalizedRecipients.contains(user.getEmail().toLowerCase())));
+        appUserRepository.saveAll(users);
+
+        return getCriticalNotificationSettings();
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> findCriticalNotificationRecipientEmails() {
+        return appUserRepository.findByCriticalNotificationRecipientTrue().stream()
+                .map(AppUser::getEmail)
+                .sorted()
+                .toList();
     }
 
     @Transactional
