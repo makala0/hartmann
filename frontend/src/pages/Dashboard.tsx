@@ -27,6 +27,7 @@ import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import apiClient from '../api/client';
 import type { Order, DashboardStats, OrderFilter } from '../types';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const { RangePicker } = DatePicker;
 
@@ -60,6 +61,7 @@ const Dashboard: React.FC = () => {
     const [filter, setFilter] = useState<OrderFilter>({});
     const [appliedFilter, setAppliedFilter] = useState<OrderFilter>({});
     const { current: currentPage, pageSize } = pagination;
+    const { t } = useLanguage();
 
     const fetchOrders = useCallback(async () => {
         setLoading(true);
@@ -101,20 +103,20 @@ const Dashboard: React.FC = () => {
 
     const columns: ColumnsType<Order> = [
         {
-            title: 'ID Zakázky',
+            title: t('field.orderId'),
             dataIndex: 'orderId',
             key: 'orderId',
             width: 120,
             render: (text: string) => <code>{text}</code>,
         },
         {
-            title: 'Číslo zakázky',
+            title: t('field.orderNumber'),
             dataIndex: 'orderNumber',
             key: 'orderNumber',
             width: 130,
         },
         {
-            title: 'Typ linky',
+            title: t('field.lineType'),
             dataIndex: 'lineType',
             key: 'lineType',
             width: 110,
@@ -126,13 +128,13 @@ const Dashboard: React.FC = () => {
             width: 130,
         },
         {
-            title: 'Receptura',
-            dataIndex: 'Receptura',
+            title: t('field.recipe'),
+            dataIndex: t('field.recipe'),
             key: 'recipe',
             width: 130,
         },
         {
-            title: 'Datum zahájení',
+            title: t('field.startDate'),
             dataIndex: 'orderBeginDate',
             key: 'orderBeginDate',
             width: 160,
@@ -175,14 +177,14 @@ const Dashboard: React.FC = () => {
             ),
         },
         {
-            title: 'Celkem',
+            title: t('field.total'),
             dataIndex: 'totalCount',
             key: 'totalCount',
             align: 'center',
             width: 80,
         },
         {
-            title: 'Úspěšnost',
+            title: t('field.successRate'),
             dataIndex: 'okPercentage',
             key: 'okPercentage',
             align: 'center',
@@ -193,7 +195,7 @@ const Dashboard: React.FC = () => {
             },
         },
         {
-            title: 'Akce',
+            title: t('common.actions'),
             key: 'action',
             width: 100,
             render: (_, record) => (
@@ -202,7 +204,7 @@ const Dashboard: React.FC = () => {
                     size="small"
                     onClick={() => navigate(`/dashboard/${record.id}`)}
                 >
-                    Detail
+                    {t('common.detail')}
                 </Button>
             ),
         },
@@ -226,7 +228,7 @@ const Dashboard: React.FC = () => {
                 <Col xs={24} sm={8}>
                     <Card>
                         <Statistic
-                            title="OK kusů"
+                            title={t('dashboard.okItems')}
                             value={stats.okCount}
                             valueStyle={{ color: '#52c41a' }}
                             prefix={<CheckCircleOutlined />}
@@ -236,7 +238,7 @@ const Dashboard: React.FC = () => {
                 <Col xs={24} sm={8}>
                     <Card>
                         <Statistic
-                            title="NOK kusů"
+                            title={t('dashboard.nokItems')}
                             value={stats.nokCount}
                             valueStyle={{ color: '#ff4d4f' }}
                             prefix={<CloseCircleOutlined />}
@@ -246,7 +248,7 @@ const Dashboard: React.FC = () => {
                 <Col xs={24} sm={8}>
                     <Card>
                         <Statistic
-                            title="Celkem zakázek"
+                            title={t('dashboard.totalOrders')}
                             value={stats.totalRecipes}
                             prefix={<FileTextOutlined />}
                         />
@@ -255,12 +257,12 @@ const Dashboard: React.FC = () => {
             </Row>
 
             {/* Filtry */}
-            <Card title="Filtry zakázek" style={{ marginBottom: 24 }}>
+            <Card title={t('dashboard.orderFilters')} style={{ marginBottom: 24 }}>
                 <Row gutter={[16, 16]}>
                     <Col xs={24} sm={12} md={8}>
-                        <label>Datum zahájení:</label>
+                        <label>{t('field.startDate')}:</label>
                         <RangePicker
-                            placeholder={['Od data', 'Do data']}
+                            placeholder={[t('placeholder.dateFrom'), t('placeholder.dateTo')]}
                             style={{ width: '100%' }}
                             onChange={(dates) => {
                                 setFilter({
@@ -272,10 +274,10 @@ const Dashboard: React.FC = () => {
                         />
                     </Col>
                     <Col xs={24} sm={12} md={8}>
-                        <label>Typ linky:</label>
+                        <label>{t('field.lineType')}:</label>
                         <Select
                             allowClear
-                            placeholder="Typ linky"
+                            placeholder={t('field.lineType')}
                             style={{ width: '100%' }}
                             value={filter.lineType}
                             options={LINE_TYPE_OPTIONS}
@@ -283,9 +285,9 @@ const Dashboard: React.FC = () => {
                         />
                     </Col>
                     <Col xs={24} sm={12} md={8}>
-                        <label>ID Zakázky:</label>
+                        <label>{t('field.orderId')}:</label>
                         <InputNumber
-                            placeholder="ID Zakázky"
+                            placeholder={t('field.orderId')}
                             style={{ width: '100%' }}
                             value={filter.orderId}
                             onChange={(value) => setFilter({ ...filter, orderId: value || undefined })}
@@ -294,9 +296,9 @@ const Dashboard: React.FC = () => {
                 </Row>
                 <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                     <Col xs={24} sm={12} md={8}>
-                        <label>Číslo zakázky:</label>
+                        <label>{t('field.orderNumber')}:</label>
                         <InputNumber
-                            placeholder="Číslo zakázky"
+                            placeholder={t('field.orderNumber')}
                             style={{ width: '100%' }}
                             value={filter.orderNumber}
                             onChange={(value) => setFilter({ ...filter, orderNumber: value || undefined })}
@@ -311,10 +313,10 @@ const Dashboard: React.FC = () => {
                         />
                     </Col>
                     <Col xs={24} sm={12} md={8}>
-                        <label>Receptura:</label>
+                        <label>{t('field.recipe')}:</label>
                         <AutoComplete
                             allowClear
-                            placeholder="Recipe"
+                            placeholder={t('field.recipe')}
                             style={{ width: '100%' }}
                             value={filter.recipe}
                             options={RECIPE_OPTIONS}
@@ -330,10 +332,10 @@ const Dashboard: React.FC = () => {
                     <Col style={{ marginTop: 22 }}>
                         <Space>
                             <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
-                                Filtrovat
+                                {t('common.filter')}
                             </Button>
                             <Button icon={<ReloadOutlined />} onClick={handleReset}>
-                                Reset
+                                {t('common.reset')}
                             </Button>
                         </Space>
                     </Col>
@@ -341,7 +343,7 @@ const Dashboard: React.FC = () => {
             </Card>
 
             {/* Tabulka */}
-            <Card title="Seznam zakázek">
+            <Card title={t('dashboard.orderList')}>
                 <Table
                     columns={columns}
                     dataSource={orders}
@@ -353,7 +355,7 @@ const Dashboard: React.FC = () => {
                         showSizeChanger: true,
                         showQuickJumper: true,
                         showTotal: (total, range) =>
-                            `${range[0]}-${range[1]} z ${total} zakázek`,
+                            `${range[0]}-${range[1]} / ${total} ${t('dashboard.ordersTotal')}`,
                         pageSizeOptions: ['10', '20', '50', '100'],
                         onChange: (page, pageSize) => {
                             setPagination(prev => ({

@@ -40,6 +40,7 @@ import dayjs from 'dayjs';
 import apiClient from '../api/client';
 import type { OrderDetailWithItems, Item } from '../types';
 import ItemDetailContent from '../components/ItemDetailContent';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -71,6 +72,7 @@ const OrderDetail: React.FC = () => {
     const [commentValue, setCommentValue] = useState('');
     const [savingComment, setSavingComment] = useState(false);
     const { current: currentPage, pageSize } = itemPagination;
+    const { t } = useLanguage();
 
     const selectedItemIndex = selectedItem
         ? filteredItems.findIndex(item => item.id === selectedItem.id)
@@ -167,10 +169,10 @@ const OrderDetail: React.FC = () => {
             setOrderDetail(response.data);
             setFilteredItems(response.data.items);
             setCommentValue(response.data.comment || '');
-            message.success('Komentář byl uložen');
+            message.success(t('order.commentSaved'));
         } catch (error) {
             console.error('Failed to save order comment:', error);
-            message.error('Komentář se nepodařilo uložit');
+            message.error(t('order.commentSaveFailed'));
         } finally {
             setSavingComment(false);
         }
@@ -178,7 +180,7 @@ const OrderDetail: React.FC = () => {
 
     const columns: ColumnsType<Item> = [
         {
-            title: 'ID Kusu',
+            title: t('field.itemId'),
             dataIndex: 'itemId',
             key: 'itemId',
             width: 140,
@@ -190,14 +192,14 @@ const OrderDetail: React.FC = () => {
             sorter: (a, b) => a.itemId.localeCompare(b.itemId),
         },
         {
-            title: 'Sériové číslo',
+            title: t('field.serialNumber'),
             dataIndex: 'serialNumber',
             key: 'serialNumber',
             width: 130,
             sorter: (a, b) => a.serialNumber.localeCompare(b.serialNumber),
         },
         {
-            title: 'Čas kontroly',
+            title: t('field.inspectionTime'),
             dataIndex: 'endInspectionTime',
             key: 'endInspectionTime',
             width: 160,
@@ -210,7 +212,7 @@ const OrderDetail: React.FC = () => {
             defaultSortOrder: 'descend',
         },
         {
-            title: 'Kamera',
+            title: t('field.camera'),
             dataIndex: 'cameraNumber',
             key: 'cameraNumber',
             align: 'center',
@@ -223,7 +225,7 @@ const OrderDetail: React.FC = () => {
             sorter: (a, b) => a.cameraNumber - b.cameraNumber,
         },
         {
-            title: 'Defekt',
+            title: 'Typ vady',
             dataIndex: 'defectType',
             key: 'defectType',
             width: 120,
@@ -239,12 +241,12 @@ const OrderDetail: React.FC = () => {
             },
         },
         {
-            title: 'Výsledky stanic',
+            title: t('itemDetail.checkResults'),
             key: 'stationResults',
             width: 180,
             render: (_, record: Item) => (
                 <Space>
-                    <Tooltip title={`Stanice 1: ${record.station1Result}`}>
+                    <Tooltip title={`${t('itemDetail.station')} 1: ${record.station1Result}`}>
                         <Tag
                             color={getStatusColor(record.station1Result)}
                             icon={getStatusIcon(record.station1Result)}
@@ -253,7 +255,7 @@ const OrderDetail: React.FC = () => {
                             1
                         </Tag>
                     </Tooltip>
-                    <Tooltip title={`Stanice 2: ${record.station2Result}`}>
+                    <Tooltip title={`${t('itemDetail.station')} 2: ${record.station2Result}`}>
                         <Tag
                             color={getStatusColor(record.station2Result)}
                             icon={getStatusIcon(record.station2Result)}
@@ -262,7 +264,7 @@ const OrderDetail: React.FC = () => {
                             2
                         </Tag>
                     </Tooltip>
-                    <Tooltip title={`Stanice 3: ${record.station3Result}`}>
+                    <Tooltip title={`${t('itemDetail.station')} 3: ${record.station3Result}`}>
                         <Tag
                             color={getStatusColor(record.station3Result)}
                             icon={getStatusIcon(record.station3Result)}
@@ -275,7 +277,7 @@ const OrderDetail: React.FC = () => {
             ),
         },
         {
-            title: 'Celkový výsledek',
+            title: t('field.totalResult'),
             dataIndex: 'totalResult',
             key: 'totalResult',
             align: 'center',
@@ -297,7 +299,7 @@ const OrderDetail: React.FC = () => {
             onFilter: (value, record) => record.totalResult === value,
         },
         {
-            title: 'Akce',
+            title: t('common.actions'),
             key: 'action',
             width: 100,
             fixed: 'right',
@@ -311,21 +313,22 @@ const OrderDetail: React.FC = () => {
                         setDrawerVisible(true);
                     }}
                 >
-                    Detail
+                    {t('common.detail')}
                 </Button>
             ),
         },
     ];
 
+    // @ts-ignore
     const renderFilterDrawer = () => (
         <Row gutter={[16, 16]}>
             <Col span={24}>
-                <Text strong>Filtrovat kusy</Text>
+                <Text strong>{t('order.filterItems')}</Text>
             </Col>
             <Col span={12}>
-                <Text>Výsledek:</Text>
+                <Text>{t('field.result')}:</Text>
                 <Select
-                    placeholder="Všechny výsledky"
+                    placeholder={t('placeholder.allResults')}
                     style={{ width: '100%' }}
                     value={filters.totalResult}
                     onChange={(value) => updateFilters({ totalResult: value })}
@@ -337,41 +340,41 @@ const OrderDetail: React.FC = () => {
                 </Select>
             </Col>
             <Col span={12}>
-                <Text>Kamera:</Text>
+                <Text>{t('field.camera')}:</Text>
                 <Select
-                    placeholder="Všechny kamery"
+                    placeholder={t('placeholder.allCameras')}
                     style={{ width: '100%' }}
                     value={filters.cameraNumber}
                     onChange={(value) => updateFilters({ cameraNumber: value })}
                     allowClear
                 >
                     {[1, 2, 3, 4, 5].map(num => (
-                        <Option key={num} value={num}>Kamera {num}</Option>
+                        <Option key={num} value={num}>{t('field.camera')} {num}</Option>
                     ))}
                 </Select>
             </Col>
             <Col span={24}>
-                <Text>Item ID:</Text>
+                <Text>{t('field.itemId')}:</Text>
                 <Input
-                    placeholder="Hledat podle Item ID"
+                    placeholder={t('placeholder.searchItemId')}
                     value={filters.itemId}
                     onChange={(e) => updateFilters({ itemId: e.target.value })}
                     allowClear
                 />
             </Col>
             <Col span={24}>
-                <Text>Sériové číslo:</Text>
+                <Text>{t('field.serialNumber')}:</Text>
                 <Input
-                    placeholder="Hledat podle sériového čísla"
+                    placeholder={t('placeholder.searchSerial')}
                     value={filters.serialNumber}
                     onChange={(e) => updateFilters({ serialNumber: e.target.value })}
                     allowClear
                 />
             </Col>
             <Col span={24}>
-                <Text>Defekt:</Text>
+                <Text>Typ vady:</Text>
                 <Input
-                    placeholder="Hledat podle typu defektu"
+                    placeholder="Hledat podle typu vady"
                     value={filters.defectType}
                     onChange={(e) => updateFilters({ defectType: e.target.value })}
                     allowClear
@@ -380,7 +383,7 @@ const OrderDetail: React.FC = () => {
             <Col span={24}>
                 <Space>
                     <Button onClick={clearFilters} icon={<ReloadOutlined />}>
-                        Vymazat filtry
+                        {t('order.clearFilters')}
                     </Button>
                 </Space>
             </Col>
@@ -391,7 +394,7 @@ const OrderDetail: React.FC = () => {
         return (
             <div style={{ padding: '50px', textAlign: 'center' }}>
                 <Spin size="large" />
-                <div style={{ marginTop: 16 }}>Načítání...</div>
+                <div style={{ marginTop: 16 }}>{t('common.loading')}</div>
             </div>
         );
     }
@@ -419,19 +422,19 @@ const OrderDetail: React.FC = () => {
                     onClick={() => navigate('/dashboard')}
                     size="large"
                 >
-                    Zpět na Dashboard
+                    {t('order.backToDashboard')}
                 </Button>
                 <Button
                     icon={<FilterOutlined />}
                     onClick={() => setShowFilters(!showFilters)}
                     type={hasActiveFilters ? 'primary' : 'default'}
                 >
-                    Filtry {hasActiveFilters && `(${Object.values(filters).filter(f => f).length})`}
+                    {t('common.filters')} {hasActiveFilters && `(${Object.values(filters).filter(f => f).length})`}
                 </Button>
             </Space>
 
             <Title level={2} style={{ marginBottom: 32 }}>
-                Detail objednávky #{orderDetail.orderId}
+                Detail zakázky #{orderDetail.orderId}
             </Title>
 
             {/* Header s pokrokovým indikátorem */}
@@ -441,7 +444,7 @@ const OrderDetail: React.FC = () => {
                         <Row gutter={[16, 16]}>
                             <Col span={6}>
                                 <Statistic
-                                    title="OK kusy"
+                                    title={t('order.okItems')}
                                     value={orderDetail.okCount}
                                     prefix={<CheckCircleOutlined />}
                                     valueStyle={{ color: '#52c41a', fontSize: '24px' }}
@@ -449,7 +452,7 @@ const OrderDetail: React.FC = () => {
                             </Col>
                             <Col span={6}>
                                 <Statistic
-                                    title="NOK kusy"
+                                    title={t('order.nokItems')}
                                     value={orderDetail.nokCount}
                                     prefix={<CloseCircleOutlined />}
                                     valueStyle={{ color: '#ff4d4f', fontSize: '24px' }}
@@ -465,7 +468,7 @@ const OrderDetail: React.FC = () => {
                             </Col>
                             <Col span={6}>
                                 <Statistic
-                                    title="Celkem"
+                                    title={t('field.total')}
                                     value={orderDetail.totalCount}
                                     valueStyle={{ fontSize: '24px' }}
                                 />
@@ -482,7 +485,7 @@ const OrderDetail: React.FC = () => {
                                 strokeColor={successRate >= 95 ? '#52c41a' : successRate >= 80 ? '#fa8c16' : '#ff4d4f'}
                             />
                             <div style={{ marginTop: 8 }}>
-                                <Text strong style={{ fontSize: '16px' }}>Úspěšnost</Text>
+                                <Text strong style={{ fontSize: '16px' }}>{t('field.successRate')}</Text>
                             </div>
                         </div>
                     </Col>
@@ -492,14 +495,14 @@ const OrderDetail: React.FC = () => {
             {/* Informace o objednávce */}
             <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
                 <Col xs={24} lg={24}>
-                    <Card title="Informace o objednávce" size="small">
+                    <Card title="Informace o zakázce" size="small">
                         <Descriptions column={{ xs: 1, sm: 2, md: 3, lg: 6 }} size="small">
-                            <Descriptions.Item label="Order ID">
+                            <Descriptions.Item label={t('field.orderId')}>
                                 <Text code copyable={{ text: orderDetail.orderId.toString() }}>
                                     {orderDetail.orderId}
                                 </Text>
                             </Descriptions.Item>
-                            <Descriptions.Item label="Order Number">
+                            <Descriptions.Item label={t('field.orderNumber')}>
                                 {orderDetail.orderNumber}
                             </Descriptions.Item>
                             <Descriptions.Item label="SKU">
@@ -508,21 +511,21 @@ const OrderDetail: React.FC = () => {
                             <Descriptions.Item label="Ref">
                                 {orderDetail.ref}
                             </Descriptions.Item>
-                            <Descriptions.Item label="Line Type">
+                            <Descriptions.Item label={t('field.lineType')}>
                                 <Tag color="blue">{orderDetail.lineType}</Tag>
                             </Descriptions.Item>
-                            <Descriptions.Item label="Recipe">
+                            <Descriptions.Item label={t('field.recipe')}>
                                 {orderDetail.recipe}
                             </Descriptions.Item>
-                            <Descriptions.Item label="Datum zahájení">
+                            <Descriptions.Item label={t('field.startDate')}>
                                 {dayjs(orderDetail.orderBeginDate).format('DD.MM.YYYY HH:mm')}
                             </Descriptions.Item>
                         </Descriptions>
                         <Divider style={{ margin: '16px 0' }} />
                         <Space direction="vertical" style={{ width: '100%' }} size="small">
-                            <Text strong>Komentář</Text>
+                            <Text strong>{t('field.comment')}</Text>
                             <TextArea
-                                placeholder="Přidat komentář k objednávce"
+                                placeholder="Přidat komentář k zakázce"
                                 value={commentValue}
                                 onChange={(event) => setCommentValue(event.target.value)}
                                 autoSize={{ minRows: 3, maxRows: 6 }}
@@ -536,7 +539,7 @@ const OrderDetail: React.FC = () => {
                                     loading={savingComment}
                                     onClick={handleSaveComment}
                                 >
-                                    Uložit komentář
+                                    {t('order.saveComment')}
                                 </Button>
                             </div>
                         </Space>
@@ -546,7 +549,7 @@ const OrderDetail: React.FC = () => {
 
             {/* Filtry */}
             {showFilters && (
-                <Card title="Filtry" style={{ marginBottom: 24 }}>
+                <Card title={t('common.filters')} style={{ marginBottom: 24 }}>
                     {renderFilterDrawer()}
                 </Card>
             )}
@@ -555,14 +558,14 @@ const OrderDetail: React.FC = () => {
             <Card
                 title={
                     <Space>
-                        <Text strong>Seznam kusů</Text>
+                        <Text strong>{t('order.itemList')}</Text>
                         <Badge
                             count={itemPagination.total}
                             style={{ backgroundColor: '#108ee9' }}
                         />
                         {hasActiveFilters && (
                             <Text type="secondary">
-                                (filtrováno z {orderDetail.totalCount})
+                                ({t('order.filteredFrom')} {orderDetail.totalCount})
                             </Text>
                         )}
                     </Space>
@@ -580,7 +583,7 @@ const OrderDetail: React.FC = () => {
                         showSizeChanger: true,
                         showQuickJumper: true,
                         showTotal: (total, range) =>
-                            `${range[0]}-${range[1]} z ${total} kusů`,
+                            `${range[0]}-${range[1]} / ${total} ${t('dashboard.itemsTotal')}`,
                         pageSizeOptions: ['10', '20', '50', '100'],
                         onChange: (page, pageSize) => {
                             setItemPagination(prev => ({
@@ -600,7 +603,7 @@ const OrderDetail: React.FC = () => {
 
             {/* Drawer s detailem kusu - aktualizovaná část s obrázky */}
             <Drawer
-                title={`Detail kusu ${selectedItem?.itemId || ''}`}
+                title={`${t('items.detailTitle')} ${selectedItem?.itemId || ''}`}
                 extra={selectedItem && (
                     <Space>
                         <Button
@@ -608,14 +611,14 @@ const OrderDetail: React.FC = () => {
                             disabled={!hasPreviousItem}
                             onClick={() => selectAdjacentItem(-1)}
                         >
-                            Předchozí
+                            {t('common.previous')}
                         </Button>
                         <Button
                             icon={<RightOutlined />}
                             disabled={!hasNextItem}
                             onClick={() => selectAdjacentItem(1)}
                         >
-                            Další
+                            {t('common.next')}
                         </Button>
                     </Space>
                 )}

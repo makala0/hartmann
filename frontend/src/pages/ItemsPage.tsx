@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import apiClient from '../api/client';
 import type { Item, ItemListFilter } from '../types';
 import ItemDetailContent from '../components/ItemDetailContent';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const ItemsPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
@@ -19,6 +20,7 @@ const ItemsPage: React.FC = () => {
     const [filter, setFilter] = useState<ItemListFilter>({});
     const [appliedFilter, setAppliedFilter] = useState<ItemListFilter>({});
     const { current: currentPage, pageSize } = pagination;
+    const { t } = useLanguage();
 
     const selectedItemIndex = selectedItem
         ? items.findIndex(item => item.id === selectedItem.id)
@@ -93,46 +95,46 @@ const ItemsPage: React.FC = () => {
 
     const columns: ColumnsType<Item> = [
         {
-            title: 'ID Kusu',
+            title: t('field.itemId'),
             dataIndex: 'itemId',
             key: 'itemId',
             width: 140,
             render: (text: string) => <code>{text}</code>,
         },
         {
-            title: 'ID Zakázky',
+            title: t('field.orderId'),
             dataIndex: 'orderId',
             key: 'orderId',
             width: 120,
         },
         {
-            title: 'Číslo zakázky',
+            title: t('field.orderNumber'),
             dataIndex: 'orderNumber',
             key: 'orderNumber',
             width: 130,
         },
         {
-            title: 'Sériové číslo',
+            title: t('field.serialNumber'),
             dataIndex: 'serialNumber',
             key: 'serialNumber',
             width: 150,
         },
         {
-            title: 'Čas kontroly',
+            title: t('field.inspectionTime'),
             dataIndex: 'endInspectionTime',
             key: 'endInspectionTime',
             width: 170,
             render: (text: string) => dayjs(text).format('YYYY-MM-DD HH:mm'),
         },
         {
-            title: 'Kamera',
+            title: t('field.camera'),
             dataIndex: 'cameraNumber',
             key: 'cameraNumber',
             align: 'center',
             width: 90,
         },
         {
-            title: 'Výsledek',
+            title: t('field.result'),
             dataIndex: 'totalResult',
             key: 'totalResult',
             align: 'center',
@@ -144,35 +146,35 @@ const ItemsPage: React.FC = () => {
             ),
         },
         {
-            title: 'Varování',
+            title: t('field.warning'),
             dataIndex: 'attentionFlag',
             key: 'attentionFlag',
             align: 'center',
             width: 110,
-            render: (value: boolean) => <Tag color={value ? 'warning' : 'default'}>{value ? 'Ano' : 'Ne'}</Tag>,
+            render: (value: boolean) => <Tag color={value ? 'warning' : 'default'}>{value ? t('common.yes') : t('common.no')}</Tag>,
         },
         {
-            title: 'Kritická',
+            title: t('field.critical'),
             dataIndex: 'criticalFlag',
             key: 'criticalFlag',
             align: 'center',
             width: 100,
-            render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? 'Ano' : 'Ne'}</Tag>,
+            render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? t('common.yes') : t('common.no')}</Tag>,
         },
         {
-            title: 'Defekt',
+            title: t('field.defect'),
             dataIndex: 'defectType',
             key: 'defectType',
             width: 120,
-            render: (value: string) => value && value !== 'N/A' ? <Tag color="orange">{value}</Tag> : 'Bez defektu',
+            render: (value: string) => value && value !== 'N/A' ? <Tag color="orange">{value}</Tag> : t('items.noDefect'),
         },
         {
-            title: 'Akce',
+            title: t('common.actions'),
             key: 'action',
             width: 100,
             render: (_, record) => (
                 <Button type="primary" size="small" onClick={() => setSelectedItem(record)}>
-                    Detail
+                    {t('common.detail')}
                 </Button>
             ),
         },
@@ -191,19 +193,19 @@ const ItemsPage: React.FC = () => {
 
     return (
         <div>
-            <Card title="Filtry kusů" style={{ marginBottom: 24 }}>
+            <Card title={t('items.itemFilters')} style={{ marginBottom: 24 }}>
                 <Row gutter={[16, 16]} align="bottom">
                     <Col xs={24} sm={12} md={8}>
-                        <label>ID Zakázky:</label>
+                        <label>{t('field.orderId')}:</label>
                         <InputNumber
-                            placeholder="ID Zakázky"
+                            placeholder={t('field.orderId')}
                             style={{ width: '100%' }}
                             value={filter.orderId}
                             onChange={(value) => setFilter({ ...filter, orderId: value || undefined })}
                         />
                     </Col>
                     <Col xs={24} sm={12} md={8}>
-                        <label>Příznaky:</label>
+                        <label>{t('items.flags')}:</label>
                         <div
                             style={{
                                 display: 'flex',
@@ -224,7 +226,7 @@ const ItemsPage: React.FC = () => {
                                     attentionFlag: event.target.checked ? true : undefined,
                                 })}
                             >
-                                <ExclamationCircleOutlined style={{ color: '#d48806' }} /> Varování
+                                <ExclamationCircleOutlined style={{ color: '#d48806' }} /> {t('field.warning')}
                             </Checkbox>
                             <Checkbox
                                 checked={filter.criticalFlag === true}
@@ -233,7 +235,7 @@ const ItemsPage: React.FC = () => {
                                     criticalFlag: event.target.checked ? true : undefined,
                                 })}
                             >
-                                <AlertOutlined style={{ color: '#cf1322' }} /> Kritická
+                                <AlertOutlined style={{ color: '#cf1322' }} /> {t('field.critical')}
                             </Checkbox>
                         </div>
                     </Col>
@@ -252,7 +254,7 @@ const ItemsPage: React.FC = () => {
                 </Row>
             </Card>
 
-            <Card title="Seznam kusů">
+            <Card title={t('items.itemList')}>
                 <Table
                     columns={columns}
                     dataSource={items}
@@ -267,7 +269,7 @@ const ItemsPage: React.FC = () => {
                         showSizeChanger: true,
                         showQuickJumper: true,
                         showTotal: (total, range) =>
-                            `${range[0]}-${range[1]} z ${total} kusů`,
+                            `${range[0]}-${range[1]} / ${total} ${t('dashboard.itemsTotal')}`,
                         pageSizeOptions: ['10', '20', '50', '100'],
                         onChange: (page, pageSize) => {
                             setPagination(prev => ({
@@ -281,7 +283,7 @@ const ItemsPage: React.FC = () => {
             </Card>
 
             <Drawer
-                title={`Detail kusu ${selectedItem?.itemId || ''}`}
+                title={`${t('items.detailTitle')} ${selectedItem?.itemId || ''}`}
                 extra={selectedItem && (
                     <Space>
                         <Button
@@ -289,14 +291,14 @@ const ItemsPage: React.FC = () => {
                             disabled={!hasPreviousItem}
                             onClick={() => selectAdjacentItem(-1)}
                         >
-                            Předchozí
+                            {t('common.previous')}
                         </Button>
                         <Button
                             icon={<RightOutlined />}
                             disabled={!hasNextItem}
                             onClick={() => selectAdjacentItem(1)}
                         >
-                            Další
+                            {t('common.next')}
                         </Button>
                     </Space>
                 )}

@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Avatar, Button, Card, Descriptions, Divider, Form, Input, message } from 'antd';
 import { LockOutlined, SafetyOutlined, UserOutlined } from '@ant-design/icons';
 import apiClient from '../api/client';
+import { useLanguage } from '../i18n/LanguageContext';
 
 
 interface UserInfo {
@@ -13,20 +14,21 @@ const Profile: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [user, setUser] = useState<UserInfo | null>(null);
     const [form] = Form.useForm();
+    const { t } = useLanguage();
 
-    const fetchUserInfo = async () => {
+    const fetchUserInfo = useCallback(async () => {
         try {
             const response = await apiClient.get('/auth/me');
             setUser(response.data);
         } catch (error) {
-            message.error('Nepodařilo se načíst informace o uživateli');
+            message.error(t('profile.loadFailed'));
         }
-    };
+    }, [t]);
 
 
     useEffect(() => {
         fetchUserInfo();
-    }, []);
+    }, [fetchUserInfo]);
 
 
     const onFinish = async (values: {
@@ -35,7 +37,7 @@ const Profile: React.FC = () => {
         confirmNewPassword: string;
     }) => {
         if (values.newPassword !== values.confirmNewPassword) {
-            message.error('Nová hesla se neshodují!');
+            message.error(t('profile.passwordMismatch'));
             return;
         }
 
@@ -47,10 +49,10 @@ const Profile: React.FC = () => {
                 confirmNewPassword: values.confirmNewPassword,
             });
 
-            message.success('Heslo bylo úspěšně změněno!');
+            message.success(t('profile.passwordChanged'));
             form.resetFields();
         } catch (error: any) {
-            const errorMessage = error.response?.data?.error || 'Změna hesla selhala';
+            const errorMessage = error.response?.data?.error || t('profile.passwordChangeFailed');
             message.error(errorMessage);
         } finally {
             setLoading(false);
@@ -60,7 +62,7 @@ const Profile: React.FC = () => {
     return (
         <div>
             <h1 style={{ marginBottom: 24 }}>
-                <UserOutlined /> Můj profil
+                <UserOutlined /> {t('profile.title')}
             </h1>
 
             {/* Informace o uživateli */}
@@ -68,26 +70,26 @@ const Profile: React.FC = () => {
                 title={
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <Avatar size={48} icon={<UserOutlined />} />
-                        <span>Informace o účtu</span>
+                        <span>{t('profile.accountInfo')}</span>
                     </div>
                 }
                 style={{ marginBottom: 24 }}
             >
                 <Descriptions column={1} bordered>
                     <Descriptions.Item label="Email">
-                        <strong>{user?.email || 'Načítání...'}</strong>
+                        <strong>{user?.email || t('common.loading')}</strong>
                     </Descriptions.Item>
-                    <Descriptions.Item label="Role">
-                        {user?.authorities?.join(', ') || 'Uživatel'}
+                    <Descriptions.Item label={t('field.role')}>
+                        {user?.authorities?.join(', ') || t('profile.user')}
                     </Descriptions.Item>
                 </Descriptions>
             </Card>
 
-            {/* Změna hesla */}
+            {/* {t('profile.changePassword')} */}
             <Card
                 title={
                     <span>
-            <SafetyOutlined /> Změna hesla
+            <SafetyOutlined /> {t('profile.changePassword')}
           </span>
                 }
             >
@@ -99,13 +101,13 @@ const Profile: React.FC = () => {
                     style={{ maxWidth: 500 }}
                 >
                     <Form.Item
-                        label="Současné heslo"
+                        label={t('field.currentPassword')}
                         name="currentPassword"
-                        rules={[{ required: true, message: 'Zadejte současné heslo!' }]}
+                        rules={[{ required: true, message: t('validation.currentPasswordRequired') }]}
                     >
                         <Input.Password
                             prefix={<LockOutlined />}
-                            placeholder="Vaše současné heslo"
+                            placeholder={t('placeholder.currentPassword')}
                             size="large"
                         />
                     </Form.Item>
@@ -113,46 +115,46 @@ const Profile: React.FC = () => {
                     <Divider />
 
                     <Form.Item
-                        label="Nové heslo"
+                        label={t('field.newPassword')}
                         name="newPassword"
                         rules={[
-                            { required: true, message: 'Zadejte nové heslo!' },
-                            { min: 8, message: 'Heslo musí mít alespoň 6 znaků!' },
+                            { required: true, message: t('validation.newPasswordRequired') },
+                            { min: 8, message: t('validation.passwordMin6') },
                         ]}
                     >
                         <Input.Password
                             prefix={<LockOutlined />}
-                            placeholder="Minimálně 6 znaků"
+                            placeholder={t('placeholder.minPassword')}
                             size="large"
                         />
                     </Form.Item>
 
                     <Form.Item
-                        label="Potvrzení nového hesla"
+                        label={t('field.confirmNewPassword')}
                         name="confirmNewPassword"
                         dependencies={['newPassword']}
                         rules={[
-                            { required: true, message: 'Potvrďte nové heslo!' },
+                            { required: true, message: t('validation.confirmNewPassword') },
                             ({ getFieldValue }) => ({
                                 validator(_, value) {
                                     if (!value || getFieldValue('newPassword') === value) {
                                         return Promise.resolve();
                                     }
-                                    return Promise.reject(new Error('Nová hesla se neshodují!'));
+                                    return Promise.reject(new Error(t('profile.passwordMismatch')));
                                 },
                             }),
                         ]}
                     >
                         <Input.Password
                             prefix={<LockOutlined />}
-                            placeholder="Zadejte nové heslo znovu"
+                            placeholder={t('placeholder.repeatNewPassword')}
                             size="large"
                         />
                     </Form.Item>
 
                     <Form.Item>
                         <Button type="primary" htmlType="submit" size="large" loading={loading}>
-                            Změnit heslo
+                            {t('profile.changePasswordButton')}
                         </Button>
                     </Form.Item>
                 </Form>

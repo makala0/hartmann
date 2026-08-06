@@ -1,4 +1,5 @@
 import {useState} from "react";
+import { useLanguage } from "../i18n/LanguageContext";
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
@@ -11,9 +12,6 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
     if (!imagePath || imagePath === 'N/A' || imagePath.trim() === '') {
         return null;
     }
-
-    // Extrakt názvu souboru z cesty
-    const filePath = imagePath.split('/').pop();
 
     if (!imagePath) {
         return null;
@@ -52,6 +50,7 @@ export const ImageWithFallback: React.FC<{
 }> = ({ src, alt, style, fallback }) => {
     const [imageError, setImageError] = useState(false);
     const [loading, setLoading] = useState(true);
+    const { t } = useLanguage();
 
     const handleLoad = () => {
         setLoading(false);
@@ -74,7 +73,7 @@ export const ImageWithFallback: React.FC<{
                 borderRadius: '6px',
                 ...style
             }}>
-                {fallback || <div style={{ color: '#999', textAlign: 'center' }}>Obrázek nedostupný</div>}
+                {fallback || <div style={{ color: '#999', textAlign: 'center' }}>{t('itemDetail.imageUnavailable')}</div>}
             </div>
         );
     }
@@ -93,7 +92,7 @@ export const ImageWithFallback: React.FC<{
                     justifyContent: 'center',
                     backgroundColor: '#f0f0f0'
                 }}>
-                    Načítání...
+                    {t('common.loading')}
                 </div>
             )}
             <img

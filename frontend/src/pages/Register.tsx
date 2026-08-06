@@ -3,10 +3,12 @@ import { Form, Input, Button, Card, message } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const Register: React.FC = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const { t } = useLanguage();
 
     const onFinish = async (values: {
         firstName: string;
@@ -16,7 +18,7 @@ const Register: React.FC = () => {
         confirmPassword: string;
     }) => {
         if (values.password !== values.confirmPassword) {
-            message.error('Hesla se neshodují!');
+            message.error(t('users.passwordMismatch'));
             return;
         }
 
@@ -30,10 +32,10 @@ const Register: React.FC = () => {
                 confirmPassword: values.confirmPassword,
             });
 
-            message.success('Registrace proběhla úspěšně! Nyní se můžete přihlásit.');
+            message.success(t('register.success'));
             navigate('/login');
         } catch (error: any) {
-            const errorMessage = error.response?.data?.error || 'Registrace selhala';
+            const errorMessage = error.response?.data?.error || t('register.failed');
             message.error(errorMessage);
         } finally {
             setLoading(false);
@@ -54,77 +56,77 @@ const Register: React.FC = () => {
                 title={
                     <div style={{ textAlign: 'center' }}>
                         <h1 style={{ fontSize: '32px', margin: 0 }}>🏭 Hartmann</h1>
-                        <p style={{ color: '#888', margin: '8px 0 0 0' }}>Registrace nového uživatele</p>
+                        <p style={{ color: '#888', margin: '8px 0 0 0' }}>{t('register.title')}</p>
                     </div>
                 }
                 style={{ width: 450, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
             >
                 <Form name="register" onFinish={onFinish} size="large" layout="vertical">
                     <Form.Item
-                        label="Křestní jméno"
+                        label={t('field.firstName')}
                         name="firstName"
-                        rules={[{ required: true, message: 'Zadejte křestní jméno!' }]}
+                        rules={[{ required: true, message: t('validation.firstNameRequired') }]}
                     >
-                        <Input prefix={<UserOutlined />} placeholder="Jan" />
+                        <Input prefix={<UserOutlined />} placeholder={t('placeholder.firstName')} />
                     </Form.Item>
 
                     <Form.Item
-                        label="Příjmení"
+                        label={t('field.lastName')}
                         name="lastName"
-                        rules={[{ required: true, message: 'Zadejte příjmení!' }]}
+                        rules={[{ required: true, message: t('validation.lastNameRequired') }]}
                     >
-                        <Input prefix={<UserOutlined />} placeholder="Novák" />
+                        <Input prefix={<UserOutlined />} placeholder={t('placeholder.lastName')} />
                     </Form.Item>
 
                     <Form.Item
                         label="Email"
                         name="email"
                         rules={[
-                            { required: true, message: 'Zadejte email!' },
-                            { type: 'email', message: 'Zadejte platný email!' },
+                            { required: true, message: t('validation.emailRequired') },
+                            { type: 'email', message: t('validation.validEmail') },
                         ]}
                     >
                         <Input prefix={<MailOutlined />} placeholder="jan.novak@example.com" />
                     </Form.Item>
 
                     <Form.Item
-                        label="Heslo"
+                        label={t('field.password')}
                         name="password"
                         rules={[
-                            { required: true, message: 'Zadejte heslo!' },
-                            { min: 8, message: 'Heslo musí mít alespoň 6 znaků!' },
+                            { required: true, message: t('login.passwordRequired') },
+                            { min: 8, message: t('validation.passwordMin6') },
                         ]}
                     >
-                        <Input.Password prefix={<LockOutlined />} placeholder="Minimálně 6 znaků" />
+                        <Input.Password prefix={<LockOutlined />} placeholder={t('placeholder.minPassword')} />
                     </Form.Item>
 
                     <Form.Item
-                        label="Potvrzení hesla"
+                        label={t('field.confirmPassword')}
                         name="confirmPassword"
                         dependencies={['password']}
                         rules={[
-                            { required: true, message: 'Potvrďte heslo!' },
+                            { required: true, message: t('validation.confirmPassword') },
                             ({ getFieldValue }) => ({
                                 validator(_, value) {
                                     if (!value || getFieldValue('password') === value) {
                                         return Promise.resolve();
                                     }
-                                    return Promise.reject(new Error('Hesla se neshodují!'));
+                                    return Promise.reject(new Error(t('users.passwordMismatch')));
                                 },
                             }),
                         ]}
                     >
-                        <Input.Password prefix={<LockOutlined />} placeholder="Zadejte heslo znovu" />
+                        <Input.Password prefix={<LockOutlined />} placeholder={t('placeholder.repeatPassword')} />
                     </Form.Item>
 
                     <Form.Item>
                         <Button type="primary" htmlType="submit" block loading={loading}>
-                            Zaregistrovat se
+                            {t('register.submit')}
                         </Button>
                     </Form.Item>
 
                     <div style={{ textAlign: 'center' }}>
-                        <a onClick={() => navigate('/login')}>Přihlásit se</a>
+                        <Button type="link" onClick={() => navigate('/login')}>{t('login.submit')}</Button>
                     </div>
                 </Form>
             </Card>

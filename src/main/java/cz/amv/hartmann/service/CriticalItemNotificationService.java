@@ -39,7 +39,7 @@ public class CriticalItemNotificationService {
         }
 
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("jaroslav.macala@amvtechnology.cz");
+        message.setFrom("");
         message.setTo(recipients.toArray(String[]::new));
         message.setSubject("Kritický kus označen: " + item.getItemId());
         message.setText(buildMessage(item, user));

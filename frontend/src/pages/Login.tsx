@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Card, message } from 'antd';
+import { Form, Input, Button, Card, message, Select } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface LoginProps {
     onLogin?: () => Promise<void> | void;
@@ -11,6 +12,7 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const { language, setLanguage, t } = useLanguage();
 
     const onFinish = async (values: { username: string; password: string }) => {
         setLoading(true);
@@ -24,10 +26,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             });
 
             await onLogin?.();
-            message.success('Přihlášení úspěšné!');
+            message.success(t('login.success'));
             navigate('/dashboard');
         } catch (error) {
-            message.error('Nesprávné přihlašovací údaje');
+            message.error(t('login.invalidCredentials'));
         } finally {
             setLoading(false);
         }
@@ -41,6 +43,18 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             minHeight: '100vh',
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
         }}>
+            <div style={{ position: 'absolute', top: 24, right: 24 }}>
+                <Select
+                    aria-label={t('common.language')}
+                    value={language}
+                    style={{ width: 88 }}
+                    options={[
+                        { value: 'cs', label: 'CZ' },
+                        { value: 'en', label: 'EN' },
+                    ]}
+                    onChange={setLanguage}
+                />
+            </div>
             <Card
                 title={
                     <div style={{ textAlign: 'center' }}>
@@ -53,21 +67,21 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 <Form name="login" onFinish={onFinish} size="large">
                     <Form.Item
                         name="username"
-                        rules={[{ required: true, message: 'Zadejte uživatelské jméno!' }]}
+                        rules={[{ required: true, message: t('login.usernameRequired') }]}
                     >
                         <Input prefix={<UserOutlined />} placeholder="Email" />
                     </Form.Item>
 
                     <Form.Item
                         name="password"
-                        rules={[{ required: true, message: 'Zadejte heslo!' }]}
+                        rules={[{ required: true, message: t('login.passwordRequired') }]}
                     >
-                        <Input.Password prefix={<LockOutlined />} placeholder="Heslo" />
+                        <Input.Password prefix={<LockOutlined />} placeholder={t('field.password')} />
                     </Form.Item>
 
                     <Form.Item>
                         <Button type="primary" htmlType="submit" block loading={loading}>
-                            Přihlásit se
+                            {t('login.submit')}
                         </Button>
                     </Form.Item>
 

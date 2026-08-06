@@ -1,0 +1,92 @@
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import csCS from 'antd/locale/cs_CZ';
+import enUS from 'antd/locale/en_US';
+import type { Locale } from 'antd/es/locale';
+
+export type Language = 'cs' | 'en';
+export type TranslationKey = string;
+
+const translations: Record<Language, Record<TranslationKey, string>> = {
+    cs: {
+        'common.loading': 'Načítání...', 'common.detail': 'Detail', 'common.filter': 'Filtrovat', 'common.filters': 'Filtry', 'common.reset': 'Reset', 'common.previous': 'Předchozí', 'common.next': 'Další', 'common.profile': 'Profil', 'common.logout': 'Odhlásit se', 'common.language': 'Jazyk', 'common.actions': 'Akce', 'common.cancel': 'Zrušit', 'common.create': 'Vytvořit', 'common.delete': 'Odebrat', 'common.save': 'Uložit', 'common.yes': 'Ano', 'common.no': 'Ne', 'common.selectPlease': 'Prosím vyberte',
+        'nav.orders': 'Zakázky', 'nav.items': 'Kusy', 'nav.inspectionMode': 'Režim kontroly', 'nav.users': 'Uživatelé',
+        'field.orderId': 'ID Zakázky', 'field.orderNumber': 'Číslo zakázky', 'field.itemId': 'ID Kusu', 'field.serialNumber': 'Sériové číslo', 'field.inspectionTime': 'Čas kontroly', 'field.camera': 'Kamera', 'field.result': 'Výsledek', 'field.totalResult': 'Celkový výsledek', 'field.defect': 'Defekt', 'field.defectType': 'Typ defektu', 'field.lineType': 'Typ linky', 'field.recipe': 'Receptura', 'field.startDate': 'Datum zahájení', 'field.total': 'Celkem', 'field.successRate': 'Úspěšnost', 'field.role': 'Role', 'field.password': 'Heslo', 'field.confirmPassword': 'Potvrzení hesla', 'field.currentPassword': 'Současné heslo', 'field.newPassword': 'Nové heslo', 'field.confirmNewPassword': 'Potvrzení nového hesla', 'field.firstName': 'Křestní jméno', 'field.lastName': 'Příjmení', 'field.emailRecipients': 'Příjemci e-mailu', 'field.warning': 'Varování', 'field.critical': 'Kritická', 'field.comment': 'Komentář',
+        'placeholder.dateFrom': 'Od data', 'placeholder.dateTo': 'Do data', 'placeholder.allResults': 'Všechny výsledky', 'placeholder.allCameras': 'Všechny kamery', 'placeholder.searchItemId': 'Hledat podle Item ID', 'placeholder.searchSerial': 'Hledat podle sériového čísla', 'placeholder.searchDefect': 'Hledat podle typu defektu', 'placeholder.orderComment': 'Přidat komentář k objednávce', 'placeholder.password': 'Heslo', 'placeholder.currentPassword': 'Vaše současné heslo', 'placeholder.minPassword': 'Minimálně 6 znaků', 'placeholder.repeatPassword': 'Zadejte heslo znovu', 'placeholder.repeatNewPassword': 'Zadejte nové heslo znovu', 'placeholder.selectRegisteredAccounts': 'Vyberte registrované účty', 'placeholder.firstName': 'Jan', 'placeholder.lastName': 'Novák',
+        'login.usernameRequired': 'Zadejte uživatelské jméno!', 'login.passwordRequired': 'Zadejte heslo!', 'login.submit': 'Přihlásit se', 'login.success': 'Přihlášení úspěšné!', 'login.invalidCredentials': 'Nesprávné přihlašovací údaje',
+        'dashboard.okItems': 'OK kusů', 'dashboard.nokItems': 'NOK kusů', 'dashboard.totalOrders': 'Celkem zakázek', 'dashboard.orderFilters': 'Filtry zakázek', 'dashboard.orderList': 'Seznam zakázek', 'dashboard.itemsTotal': 'kusů', 'dashboard.ordersTotal': 'zakázek',
+        'items.itemFilters': 'Filtry kusů', 'items.itemList': 'Seznam kusů', 'items.flags': 'Příznaky', 'items.noDefect': 'Bez defektu', 'items.detailTitle': 'Detail kusu',
+        'order.backToDashboard': 'Zpět na Dashboard', 'order.detailTitle': 'Detail objednávky', 'order.okItems': 'OK kusy', 'order.nokItems': 'NOK kusy', 'order.info': 'Informace o objednávce', 'order.saveComment': 'Uložit komentář', 'order.itemList': 'Seznam kusů', 'order.filteredFrom': 'filtrováno z', 'order.filterItems': 'Filtrovat kusy', 'order.clearFilters': 'Vymazat filtry', 'order.commentSaved': 'Komentář byl uložen', 'order.commentSaveFailed': 'Komentář se nepodařilo uložit',
+        'inspection.loaded': 'Načten kus', 'inspection.invalidCode': 'Neplatný kód', 'inspection.notFound': 'Kód {code} nebyl nalezen', 'inspection.waitingTitle': 'Čekám na první kód', 'inspection.waitingDescription': 'Po načtení kódu se zde zobrazí detail kusu.',
+        'profile.title': 'Můj profil', 'profile.accountInfo': 'Informace o účtu', 'profile.user': 'Uživatel', 'profile.changePassword': 'Změna hesla', 'profile.passwordChanged': 'Heslo bylo úspěšně změněno!', 'profile.passwordChangeFailed': 'Změna hesla selhala', 'profile.loadFailed': 'Nepodařilo se načíst informace o uživateli', 'profile.passwordMismatch': 'Nová hesla se neshodují!', 'profile.changePasswordButton': 'Změnit heslo',
+        'users.management': 'Správa uživatelů', 'users.addUser': 'Přidat uživatele', 'users.deleteUserQuestion': 'Odebrat uživatele?', 'users.deleteUserDescription': 'Opravdu chcete odebrat účet {email}?', 'users.criticalRecipients': 'Adresáti kritických upozornění', 'users.criticalAlertMessage': 'Po zaškrtnutí Kritická u kusu se ihned odešle e-mail vybraným účtům.', 'users.criticalAlertDescription': 'Adresáty lze vybrat pouze ze zaregistrovaných účtů. Správu má k dispozici role Admin a Servis.', 'users.emailRecipientsExtra': 'Vyberte jeden nebo více existujících uživatelských účtů. Pokud není vybrán nikdo, e-maily se neodesílají.', 'users.saveRecipients': 'Uložit adresáty', 'users.loadFailed': 'Nepodařilo se načíst uživatele', 'users.passwordMismatch': 'Hesla se neshodují!', 'users.created': 'Uživatel byl vytvořen', 'users.createFailed': 'Vytvoření uživatele selhalo', 'users.recipientsSaved': 'Adresáti kritických upozornění byli uloženi', 'users.recipientsSaveFailed': 'Adresáty kritických upozornění se nepodařilo uložit', 'users.deleted': 'Uživatel byl odebrán', 'users.deleteFailed': 'Odebrání uživatele selhalo', 'role.worker': 'Pracovník', 'role.admin': 'Admin', 'role.service': 'Servis',
+        'validation.emailRequired': 'Zadejte e-mail!', 'validation.validEmail': 'Zadejte platný e-mail!', 'validation.roleRequired': 'Vyberte roli!', 'validation.passwordMin8': 'Heslo musí mít alespoň 8 znaků!', 'validation.passwordMin6': 'Heslo musí mít alespoň 6 znaků!', 'validation.confirmPassword': 'Potvrďte heslo!', 'validation.firstNameRequired': 'Zadejte křestní jméno!', 'validation.lastNameRequired': 'Zadejte příjmení!', 'validation.newPasswordRequired': 'Zadejte nové heslo!', 'validation.currentPasswordRequired': 'Zadejte současné heslo!', 'validation.confirmNewPassword': 'Potvrďte nové heslo!',
+        'register.title': 'Registrace nového uživatele', 'register.success': 'Registrace proběhla úspěšně! Nyní se můžete přihlásit.', 'register.failed': 'Registrace selhala', 'register.submit': 'Zaregistrovat se',
+        'itemDetail.imageUnavailable': 'Obrázek není dostupný', 'itemDetail.flagSaved': 'Označení kusu bylo uloženo', 'itemDetail.flagSaveFailed': 'Označení kusu se nepodařilo uložit', 'itemDetail.flagsTitle': 'Označení kusu', 'itemDetail.flagsExtra': 'Ruční priorita kontroly', 'itemDetail.warningDescription': 'Vyžaduje zvýšenou pozornost', 'itemDetail.criticalDescription': 'Kritický kus k prioritnímu řešení', 'itemDetail.confirmCriticalTitle': 'Opravdu označit kus jako kritický?', 'itemDetail.confirmCriticalContent': 'Po zaškrtnutí pole Kritická se ihned odešle e-mail vybraným adresátům.', 'itemDetail.confirmCriticalOk': 'Ano, označit a odeslat e-mail', 'itemDetail.basicInfo': 'Základní informace', 'itemDetail.checkResults': 'Výsledky kontrol', 'itemDetail.station': 'Stanice', 'itemDetail.stationImages': 'Obrázky ze stanic',
+    },
+    en: {
+        'common.loading': 'Loading...', 'common.detail': 'Detail', 'common.filter': 'Filter', 'common.filters': 'Filters', 'common.reset': 'Reset', 'common.previous': 'Previous', 'common.next': 'Next', 'common.profile': 'Profile', 'common.logout': 'Log out', 'common.language': 'Language', 'common.actions': 'Actions', 'common.cancel': 'Cancel', 'common.create': 'Create', 'common.delete': 'Delete', 'common.save': 'Save', 'common.yes': 'Yes', 'common.no': 'No', 'common.selectPlease': 'Please select',
+        'nav.orders': 'Orders', 'nav.items': 'Items', 'nav.inspectionMode': 'Inspection mode', 'nav.users': 'Users',
+        'field.orderId': 'Order ID', 'field.orderNumber': 'Order number', 'field.itemId': 'Item ID', 'field.serialNumber': 'Serial number', 'field.inspectionTime': 'Inspection time', 'field.camera': 'Camera', 'field.result': 'Result', 'field.totalResult': 'Total result', 'field.defect': 'Defect', 'field.defectType': 'Defect type', 'field.lineType': 'Line type', 'field.recipe': 'Recipe', 'field.startDate': 'Start date', 'field.total': 'Total', 'field.successRate': 'Success rate', 'field.role': 'Role', 'field.password': 'Password', 'field.confirmPassword': 'Confirm password', 'field.currentPassword': 'Current password', 'field.newPassword': 'New password', 'field.confirmNewPassword': 'Confirm new password', 'field.firstName': 'First name', 'field.lastName': 'Last name', 'field.emailRecipients': 'E-mail recipients', 'field.warning': 'Warning', 'field.critical': 'Critical', 'field.comment': 'Comment',
+        'placeholder.dateFrom': 'From date', 'placeholder.dateTo': 'To date', 'placeholder.allResults': 'All results', 'placeholder.allCameras': 'All cameras', 'placeholder.searchItemId': 'Search by Item ID', 'placeholder.searchSerial': 'Search by serial number', 'placeholder.searchDefect': 'Search by defect type', 'placeholder.orderComment': 'Add order comment', 'placeholder.password': 'Password', 'placeholder.currentPassword': 'Your current password', 'placeholder.minPassword': 'At least 6 characters', 'placeholder.repeatPassword': 'Enter password again', 'placeholder.repeatNewPassword': 'Enter new password again', 'placeholder.selectRegisteredAccounts': 'Select registered accounts', 'placeholder.firstName': 'John', 'placeholder.lastName': 'Doe',
+        'login.usernameRequired': 'Enter your username!', 'login.passwordRequired': 'Enter your password!', 'login.submit': 'Log in', 'login.success': 'Login successful!', 'login.invalidCredentials': 'Invalid login credentials',
+        'dashboard.okItems': 'OK items', 'dashboard.nokItems': 'NOK items', 'dashboard.totalOrders': 'Total orders', 'dashboard.orderFilters': 'Order filters', 'dashboard.orderList': 'Order list', 'dashboard.itemsTotal': 'items', 'dashboard.ordersTotal': 'orders',
+        'items.itemFilters': 'Item filters', 'items.itemList': 'Item list', 'items.flags': 'Flags', 'items.noDefect': 'No defect', 'items.detailTitle': 'Item detail',
+        'order.backToDashboard': 'Back to Dashboard', 'order.detailTitle': 'Order detail', 'order.okItems': 'OK items', 'order.nokItems': 'NOK items', 'order.info': 'Order information', 'order.saveComment': 'Save comment', 'order.itemList': 'Item list', 'order.filteredFrom': 'filtered from', 'order.filterItems': 'Filter items', 'order.clearFilters': 'Clear filters', 'order.commentSaved': 'Comment was saved', 'order.commentSaveFailed': 'Failed to save comment',
+        'inspection.loaded': 'Loaded item', 'inspection.invalidCode': 'Invalid code', 'inspection.notFound': 'Code {code} was not found', 'inspection.waitingTitle': 'Waiting for the first code', 'inspection.waitingDescription': 'After scanning a code, the item detail will be shown here.',
+        'profile.title': 'My profile', 'profile.accountInfo': 'Account information', 'profile.user': 'User', 'profile.changePassword': 'Change password', 'profile.passwordChanged': 'Password was changed successfully!', 'profile.passwordChangeFailed': 'Password change failed', 'profile.loadFailed': 'Failed to load user information', 'profile.passwordMismatch': 'New passwords do not match!', 'profile.changePasswordButton': 'Change password',
+        'users.management': 'User management', 'users.addUser': 'Add user', 'users.deleteUserQuestion': 'Delete user?', 'users.deleteUserDescription': 'Do you really want to delete account {email}?', 'users.criticalRecipients': 'Critical notification recipients', 'users.criticalAlertMessage': 'When Critical is checked on an item, an e-mail is sent immediately to the selected accounts.', 'users.criticalAlertDescription': 'Recipients can be selected only from registered accounts. Admin and Service roles can manage this.', 'users.emailRecipientsExtra': 'Select one or more existing user accounts. If nobody is selected, e-mails are not sent.', 'users.saveRecipients': 'Save recipients', 'users.loadFailed': 'Failed to load users', 'users.passwordMismatch': 'Passwords do not match!', 'users.created': 'User was created', 'users.createFailed': 'User creation failed', 'users.recipientsSaved': 'Critical notification recipients were saved', 'users.recipientsSaveFailed': 'Failed to save critical notification recipients', 'users.deleted': 'User was deleted', 'users.deleteFailed': 'User deletion failed', 'role.worker': 'Worker', 'role.admin': 'Admin', 'role.service': 'Service',
+        'validation.emailRequired': 'Enter an e-mail!', 'validation.validEmail': 'Enter a valid e-mail!', 'validation.roleRequired': 'Select a role!', 'validation.passwordMin8': 'Password must have at least 8 characters!', 'validation.passwordMin6': 'Password must have at least 6 characters!', 'validation.confirmPassword': 'Confirm the password!', 'validation.firstNameRequired': 'Enter first name!', 'validation.lastNameRequired': 'Enter last name!', 'validation.newPasswordRequired': 'Enter new password!', 'validation.currentPasswordRequired': 'Enter current password!', 'validation.confirmNewPassword': 'Confirm new password!',
+        'register.title': 'New user registration', 'register.success': 'Registration was successful! You can now log in.', 'register.failed': 'Registration failed', 'register.submit': 'Register',
+        'itemDetail.imageUnavailable': 'Image is unavailable', 'itemDetail.flagSaved': 'Item flag was saved', 'itemDetail.flagSaveFailed': 'Failed to save item flag', 'itemDetail.flagsTitle': 'Item flags', 'itemDetail.flagsExtra': 'Manual inspection priority', 'itemDetail.warningDescription': 'Requires increased attention', 'itemDetail.criticalDescription': 'Critical item for priority handling', 'itemDetail.confirmCriticalTitle': 'Mark item as critical?', 'itemDetail.confirmCriticalContent': 'When Critical is checked, an e-mail is sent immediately to the selected recipients.', 'itemDetail.confirmCriticalOk': 'Yes, mark and send e-mail', 'itemDetail.basicInfo': 'Basic information', 'itemDetail.checkResults': 'Inspection results', 'itemDetail.station': 'Station', 'itemDetail.stationImages': 'Station images',
+    },
+};
+
+interface LanguageContextValue {
+    language: Language;
+    antdLocale: Locale;
+    setLanguage: (language: Language) => void;
+    t: (key: TranslationKey, replacements?: Record<string, string | number>) => string;
+}
+
+const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
+const STORAGE_KEY = 'hartmann-language';
+
+const getInitialLanguage = (): Language => {
+    const storedLanguage = window.localStorage.getItem(STORAGE_KEY);
+    return storedLanguage === 'en' ? 'en' : 'cs';
+};
+
+export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const [language, setLanguageState] = useState<Language>(getInitialLanguage);
+
+    useEffect(() => {
+        window.localStorage.setItem(STORAGE_KEY, language);
+        document.documentElement.lang = language;
+    }, [language]);
+
+    const value = useMemo<LanguageContextValue>(() => ({
+        language,
+        antdLocale: language === 'cs' ? csCS : enUS,
+        setLanguage: setLanguageState,
+        t: (key, replacements) => {
+            const template = translations[language][key] || key;
+            if (!replacements) {
+                return template;
+            }
+            return Object.entries(replacements).reduce(
+                (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
+                template,
+            );
+        },
+    }), [language]);
+
+    return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+};
+
+export const useLanguage = () => {
+    const context = useContext(LanguageContext);
+    if (!context) {
+        throw new Error('useLanguage must be used within LanguageProvider');
+    }
+    return context;
+};

@@ -3,18 +3,7 @@ import { Alert, Button, Card, Form, Input, message, Modal, Popconfirm, Select, S
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import apiClient from '../api/client';
 import type { AppUser, CriticalNotificationSettings } from '../types';
-
-const ROLE_OPTIONS = [
-    { value: 'ROLE_WORKER', label: 'Pracovník' },
-    { value: 'ROLE_ADMIN', label: 'Admin' },
-    { value: 'ROLE_SERVICE', label: 'Servis' },
-];
-
-const roleLabels: Record<string, string> = {
-    ROLE_ADMIN: 'Admin',
-    ROLE_WORKER: 'Pracovník',
-    ROLE_SERVICE: 'Servis',
-};
+import { useLanguage } from '../i18n/LanguageContext';
 
 const roleColors: Record<string, string> = {
     ROLE_ADMIN: 'red',
@@ -29,6 +18,19 @@ const Users: React.FC = () => {
     const [saving, setSaving] = useState(false);
     const [form] = Form.useForm();
     const [notificationForm] = Form.useForm<CriticalNotificationSettings>();
+    const { t } = useLanguage();
+
+    const roleOptions = [
+        { value: 'ROLE_WORKER', label: t('role.worker') },
+        { value: 'ROLE_ADMIN', label: t('role.admin') },
+        { value: 'ROLE_SERVICE', label: t('role.service') },
+    ];
+
+    const roleLabels: Record<string, string> = {
+        ROLE_ADMIN: t('role.admin'),
+        ROLE_WORKER: t('role.worker'),
+        ROLE_SERVICE: t('role.service'),
+    };
 
     const fetchUsers = useCallback(async () => {
         setLoading(true);
@@ -42,11 +44,11 @@ const Users: React.FC = () => {
                     .map((user: AppUser) => user.email),
             });
         } catch (error: any) {
-            message.error(error.response?.data?.error || 'Nepodařilo se načíst uživatele');
+            message.error(error.response?.data?.error || t('users.loadFailed'));
         } finally {
             setLoading(false);
         }
-    }, [notificationForm]);
+    }, [notificationForm, t]);
 
     useEffect(() => {
         fetchUsers();
@@ -54,19 +56,19 @@ const Users: React.FC = () => {
 
     const createUser = async (values: { email: string; password: string; confirmPassword: string; role: string }) => {
         if (values.password !== values.confirmPassword) {
-            message.error('Hesla se neshodují!');
+            message.error(t('users.passwordMismatch'));
             return;
         }
 
         setSaving(true);
         try {
             await apiClient.post('/auth/register', values);
-            message.success('Uživatel byl vytvořen');
+            message.success(t('users.created'));
             setModalOpen(false);
             form.resetFields();
             fetchUsers();
         } catch (error: any) {
-            message.error(error.response?.data?.error || 'Vytvoření uživatele selhalo');
+            message.error(error.response?.data?.error || t('users.createFailed'));
         } finally {
             setSaving(false);
         }
@@ -81,10 +83,10 @@ const Users: React.FC = () => {
                 criticalNotificationsEnabled: selectedEmails.length > 0,
                 criticalNotificationEmails: selectedEmails,
             });
-            message.success('Adresáti kritických upozornění byli uloženi');
+            message.success(t('users.recipientsSaved'));
             fetchUsers();
         } catch (error: any) {
-            message.error(error.response?.data?.error || 'Adresáty kritických upozornění se nepodařilo uložit');
+            message.error(error.response?.data?.error || t('users.recipientsSaveFailed'));
         } finally {
             setSaving(false);
         }
@@ -93,20 +95,20 @@ const Users: React.FC = () => {
     const deleteUser = async (id: number) => {
         try {
             await apiClient.delete(`/users/${id}`);
-            message.success('Uživatel byl odebrán');
+            message.success(t('users.deleted'));
             fetchUsers();
         } catch (error: any) {
-            message.error(error.response?.data?.error || 'Odebrání uživatele selhalo');
+            message.error(error.response?.data?.error || t('users.deleteFailed'));
         }
     };
 
     return (
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <Card
-            title="Správa uživatelů"
+            title={t('users.management')}
             extra={
                 <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
-                    Přidat uživatele
+                    {t('users.addUser')}
                 </Button>
             }
         >
@@ -120,36 +122,36 @@ const Users: React.FC = () => {
                         dataIndex: 'email',
                     },
                     {
-                        title: 'Role',
+                        title: t('field.role'),
                         dataIndex: 'role',
                         render: (role: string) => <Tag color={roleColors[role]}>{roleLabels[role] || role}</Tag>,
                     },
                     {
-                        title: 'Akce',
+                        title: t('common.actions'),
                         key: 'actions',
                         render: (_, record) => (
                             <Popconfirm
-                                title="Odebrat uživatele?"
-                                description={`Opravdu chcete odebrat účet ${record.email}?`}
-                                okText="Odebrat"
-                                cancelText="Zrušit"
+                                title={t('users.deleteUserQuestion')}
+                                description={t('users.deleteUserDescription', { email: record.email })}
+                                okText={t('common.delete')}
+                                cancelText={t('common.cancel')}
                                 okButtonProps={{ danger: true }}
                                 onConfirm={() => deleteUser(record.id)}
                             >
-                                <Button danger icon={<DeleteOutlined />}>Odebrat</Button>
+                                <Button danger icon={<DeleteOutlined />}>{t('common.delete')}</Button>
                             </Popconfirm>
                         ),
                     },
                 ]}
             />
 
-            <Card title="Adresáti kritických upozornění" style={{ marginTop: 24 }}>
+            <Card title={t('users.criticalRecipients')} style={{ marginTop: 24 }}>
                 <Alert
                     type="info"
                     showIcon
                     style={{ marginBottom: 20 }}
-                    message="Po zaškrtnutí Kritická u kusu se ihned odešle e-mail vybraným účtům."
-                    description="Adresáty lze vybrat pouze ze zaregistrovaných účtů. Správu má k dispozici role Admin a Servis."
+                    message={t('users.criticalAlertMessage')}
+                    description={t('users.criticalAlertDescription')}
                 />
                 <Form<CriticalNotificationSettings>
                     form={notificationForm}
@@ -158,23 +160,23 @@ const Users: React.FC = () => {
                     initialValues={{ criticalNotificationsEnabled: false, criticalNotificationEmails: [] }}
                 >
                     <Form.Item
-                        label="Příjemci e-mailu"
+                        label={t('field.emailRecipients')}
                         name="criticalNotificationEmails"
-                        extra="Vyberte jeden nebo více existujících uživatelských účtů. Pokud není vybrán nikdo, e-maily se neodesílají."
+                        extra={t('users.emailRecipientsExtra')}
                     >
                         <Select
                             mode="multiple"
                             allowClear
-                            placeholder="Vyberte registrované účty"
+                            placeholder={t('placeholder.selectRegisteredAccounts')}
                             options={users.map(user => ({ value: user.email, label: user.email }))}
                         />
                     </Form.Item>
-                    <Button type="primary" htmlType="submit" loading={saving}>Uložit adresáty</Button>
+                    <Button type="primary" htmlType="submit" loading={saving}>{t('users.saveRecipients')}</Button>
                 </Form>
             </Card>
 
             <Modal
-                title="Přidat uživatele"
+                title={t('users.addUser')}
                 open={modalOpen}
                 onCancel={() => setModalOpen(false)}
                 footer={null}
@@ -185,37 +187,37 @@ const Users: React.FC = () => {
                         label="E-mail"
                         name="email"
                         rules={[
-                            { required: true, message: 'Zadejte e-mail!' },
-                            { type: 'email', message: 'Zadejte platný e-mail!' },
+                            { required: true, message: t('validation.emailRequired') },
+                            { type: 'email', message: t('validation.validEmail') },
                         ]}
                     >
                         <Input />
                     </Form.Item>
-                    <Form.Item label="Role" name="role" rules={[{ required: true, message: 'Vyberte roli!' }]}>
-                        <Select options={ROLE_OPTIONS} />
+                    <Form.Item label={t('field.role')} name="role" rules={[{ required: true, message: t('validation.roleRequired') }]}>
+                        <Select options={roleOptions} />
                     </Form.Item>
                     <Form.Item
-                        label="Heslo"
+                        label={t('field.password')}
                         name="password"
                         rules={[
-                            { required: true, message: 'Zadejte heslo!' },
-                            { min: 8, message: 'Heslo musí mít alespoň 8 znaků!' },
+                            { required: true, message: t('login.passwordRequired') },
+                            { min: 8, message: t('validation.passwordMin8') },
                         ]}
                     >
                         <Input.Password />
                     </Form.Item>
                     <Form.Item
-                        label="Potvrzení hesla"
+                        label={t('field.confirmPassword')}
                         name="confirmPassword"
                         dependencies={['password']}
                         rules={[
-                            { required: true, message: 'Potvrďte heslo!' },
+                            { required: true, message: t('validation.confirmPassword') },
                             ({ getFieldValue }) => ({
                                 validator(_, value) {
                                     if (!value || getFieldValue('password') === value) {
                                         return Promise.resolve();
                                     }
-                                    return Promise.reject(new Error('Hesla se neshodují!'));
+                                    return Promise.reject(new Error(t('users.passwordMismatch')));
                                 },
                             }),
                         ]}
@@ -223,8 +225,8 @@ const Users: React.FC = () => {
                         <Input.Password />
                     </Form.Item>
                     <Space style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <Button onClick={() => setModalOpen(false)}>Zrušit</Button>
-                        <Button type="primary" htmlType="submit" loading={saving}>Vytvořit</Button>
+                        <Button onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
+                        <Button type="primary" htmlType="submit" loading={saving}>{t('common.create')}</Button>
                     </Space>
                 </Form>
             </Modal>

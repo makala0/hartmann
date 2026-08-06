@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import apiClient from '../api/client';
 import type { Item } from '../types';
 import { getImageUrl } from '../utils/imageUtils';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const { Text } = Typography;
 
@@ -17,6 +18,7 @@ const SafeImage: React.FC<{
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const imageUrl = getImageUrl(imagePath);
+    const { t } = useLanguage();
 
     if (!imageUrl || error) {
         return (
@@ -33,7 +35,7 @@ const SafeImage: React.FC<{
                     color: '#999',
                 }}
             >
-                Obrázek není dostupný
+                {t('itemDetail.imageUnavailable')}
             </div>
         );
     }
@@ -80,6 +82,7 @@ interface ItemDetailContentProps {
 
 const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChange }) => {
     const [savingFlag, setSavingFlag] = useState<'attentionFlag' | 'criticalFlag' | null>(null);
+    const { t } = useLanguage();
 
     const getStatusColor = (status: string) => {
         switch (status?.toUpperCase()) {
@@ -112,10 +115,10 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
         try {
             const response = await apiClient.put<Item>(`/dashboard/item/${item.id}/flags`, flags);
             onItemChange?.(response.data);
-            message.success('Označení kusu bylo uloženo');
+            message.success(t('itemDetail.flagSaved'));
         } catch (error) {
             console.error('Failed to update item flags:', error);
-            message.error('Označení kusu se nepodařilo uložit');
+            message.error(t('itemDetail.flagSaveFailed'));
         } finally {
             setSavingFlag(null);
         }
@@ -124,8 +127,8 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
     const flagControls = (
         <Card
             size="small"
-            title="Označení kusu"
-            extra={<Text type="secondary">Ruční priorita kontroly</Text>}
+            title={t('itemDetail.flagsTitle')}
+            extra={<Text type="secondary">{t('itemDetail.flagsExtra')}</Text>}
             style={{ borderRadius: 12 }}
             styles={{ body: { padding: 12 } }}
         >
@@ -154,8 +157,8 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                             }, 'attentionFlag')}
                         />
                         <Space direction="vertical" size={0}>
-                            <Text strong><ExclamationCircleOutlined style={{ color: '#d48806' }} /> Varování</Text>
-                            <Text type="secondary" style={{ fontSize: 12 }}>Vyžaduje zvýšenou pozornost</Text>
+                            <Text strong><ExclamationCircleOutlined style={{ color: '#d48806' }} /> {t('field.warning')}</Text>
+                            <Text type="secondary" style={{ fontSize: 12 }}>{t('itemDetail.warningDescription')}</Text>
                         </Space>
                     </label>
                 </Col>
@@ -184,24 +187,24 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                                     criticalFlag: nextCriticalFlag,
                                 }, 'criticalFlag');
 
-                                if (nextCriticalFlag && !item.criticalFlag) {
-                                    Modal.confirm({
-                                        title: 'Opravdu označit kus jako kritický?',
-                                        content: 'Po zaškrtnutí pole Kritická se ihned odešle e-mail vybraným adresátům.',
-                                        okText: 'Ano, označit a odeslat e-mail',
-                                        cancelText: 'Zrušit',
-                                        okButtonProps: { danger: true },
-                                        onOk: saveCriticalFlag,
-                                    });
-                                    return;
-                                }
+                                // if (nextCriticalFlag && !item.criticalFlag) {
+                                //     Modal.confirm({
+                                //         title: t('itemDetail.confirmCriticalTitle'),
+                                //         content: t('itemDetail.confirmCriticalContent'),
+                                //         okText: t('itemDetail.confirmCriticalOk'),
+                                //         cancelText: t('common.cancel'),
+                                //         okButtonProps: { danger: true },
+                                //         onOk: saveCriticalFlag,
+                                //     });
+                                //     return;
+                                // }
 
                                 saveCriticalFlag();
                             }}
                         />
                         <Space direction="vertical" size={0}>
-                            <Text strong><AlertOutlined style={{ color: '#cf1322' }} /> Kritická</Text>
-                            <Text type="secondary" style={{ fontSize: 12 }}>Kritický kus k prioritnímu řešení</Text>
+                            <Text strong><AlertOutlined style={{ color: '#cf1322' }} /> {t('field.critical')}</Text>
+                            <Text type="secondary" style={{ fontSize: 12 }}>{t('itemDetail.criticalDescription')}</Text>
                         </Space>
                     </label>
                 </Col>
@@ -213,19 +216,19 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
         <Row gutter={[24, 24]} align="top">
             <Col xs={24} flex="0 0 560px" style={{ maxWidth: '100%' }}>
                 <Space direction="vertical" style={{ width: '100%' }} size="large">
-                    <Descriptions title="Základní informace" column={1} size="middle" bordered>
-                        <Descriptions.Item label="ID Kusu">
+                    <Descriptions title={t('itemDetail.basicInfo')} column={1} size="middle" bordered>
+                        <Descriptions.Item label={t('field.itemId')}>
                             <Text code copyable={{ text: item.itemId }}>
                                 {item.itemId}
                             </Text>
                         </Descriptions.Item>
-                        <Descriptions.Item label="Sériové číslo">
+                        <Descriptions.Item label={t('field.serialNumber')}>
                             {item.serialNumber}
                         </Descriptions.Item>
-                        <Descriptions.Item label="Order Number">
+                        <Descriptions.Item label={t('field.orderNumber')}>
                             {item.orderNumber}
                         </Descriptions.Item>
-                        <Descriptions.Item label="Order ID">
+                        <Descriptions.Item label={t('field.orderId')}>
                             {item.orderId}
                         </Descriptions.Item>
                         <Descriptions.Item label="SKU">
@@ -234,24 +237,24 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                         <Descriptions.Item label="Ref">
                             {item.ref}
                         </Descriptions.Item>
-                        <Descriptions.Item label="Čas kontroly">
+                        <Descriptions.Item label={t('field.inspectionTime')}>
                             {dayjs(item.endInspectionTime).format('DD.MM.YYYY HH:mm:ss')}
                         </Descriptions.Item>
-                        <Descriptions.Item label="Kamera">
+                        <Descriptions.Item label={t('field.camera')}>
                             <Badge count={item.cameraNumber} showZero style={{ backgroundColor: '#108ee9' }}>
                                 <CameraOutlined style={{ fontSize: '18px' }} />
                             </Badge>
                         </Descriptions.Item>
-                        <Descriptions.Item label="Typ defektu">
+                        <Descriptions.Item label={t('field.defectType')}>
                             {item.defectType === 'N/A' || !item.defectType ? (
-                                <Text type="secondary">Bez defektu</Text>
+                                <Text type="secondary">{t('items.noDefect')}</Text>
                             ) : (
                                 <Tag color="orange">{item.defectType}</Tag>
                             )}
                         </Descriptions.Item>
                     </Descriptions>
 
-                    <Card title="Výsledky kontrol" size="small">
+                    <Card title={t('itemDetail.checkResults')} size="small">
                         <Row gutter={[16, 16]}>
                             {[
                                 { num: 1, result: item.station1Result },
@@ -260,7 +263,7 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                             ].map(({ num, result }) => (
                                 <Col span={8} key={num}>
                                     <Card size="small" style={{ textAlign: 'center' }}>
-                                        <Text type="secondary">Stanice {num}</Text>
+                                        <Text type="secondary">{t('itemDetail.station')} {num}</Text>
                                         <div style={{ marginTop: 8 }}>
                                             <Tag
                                                 color={getStatusColor(result)}
@@ -276,7 +279,7 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                         </Row>
                         <Divider />
                         <div style={{ textAlign: 'center' }}>
-                            <Text strong style={{ fontSize: '16px' }}>Celkový výsledek:</Text>
+                            <Text strong style={{ fontSize: '16px' }}>{t('field.totalResult')}:</Text>
                             <div style={{ marginTop: 8 }}>
                                 <Tag
                                     color={getStatusColor(item.totalResult)}
@@ -292,12 +295,12 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
             </Col>
             <Col xs={24} flex="1 1 600px" style={{ minWidth: 0 }}>
                 <Space direction="vertical" style={{ width: '100%' }} size="large">
-                    <Card title="Obrázky ze stanic" size="small">
+                    <Card title={t('itemDetail.stationImages')} size="small">
                         <Row gutter={[16, 16]}>
                             {[
-                                { label: 'Stanice 1', path: item.station1ImagePath },
-                                { label: 'Stanice 2', path: item.station2ImagePath },
-                                { label: 'Stanice 3', path: item.station3ImagePath },
+                                { label: `${t('itemDetail.station')} 1`, path: item.station1ImagePath },
+                                { label: `${t('itemDetail.station')} 2`, path: item.station2ImagePath },
+                                { label: `${t('itemDetail.station')} 3`, path: item.station3ImagePath },
                             ].map(({ label, path }, index) => (
                                 <Col xs={24} xl={8} key={index}>
                                     <Card size="small" title={label}>

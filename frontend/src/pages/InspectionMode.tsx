@@ -4,6 +4,7 @@ import { BarcodeOutlined } from '@ant-design/icons';
 import apiClient from '../api/client';
 import type { Item } from '../types';
 import ItemDetailContent from '../components/ItemDetailContent';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const { Title, Text } = Typography;
 
@@ -12,6 +13,7 @@ const SCAN_IDLE_DELAY_MS = 250;
 const InspectionMode: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+    const { t } = useLanguage();
     const scanBufferRef = useRef('');
     const scanTimeoutRef = useRef<number | null>(null);
     const loadingRef = useRef(false);
@@ -33,7 +35,7 @@ const InspectionMode: React.FC = () => {
         }
 
         if (!/^\d+$/.test(normalizedCode)) {
-            message.error(`Neplatný kód: ${normalizedCode}`);
+            message.error(`${t('inspection.invalidCode')}: ${normalizedCode}`);
             return;
         }
 
@@ -43,15 +45,15 @@ const InspectionMode: React.FC = () => {
         try {
             const response = await apiClient.get<{ orderId: number; item: Item }>(`/dashboard/scan/${normalizedCode}`);
             setSelectedItem(response.data.item);
-            message.success(`Načten kus ${response.data.item.itemId}`);
+            message.success(`${t('inspection.loaded')} ${response.data.item.itemId}`);
         } catch (error) {
             console.error('Failed to load scanned item:', error);
-            message.error(`Kód ${normalizedCode} nebyl nalezen`);
+            message.error(t('inspection.notFound', { code: normalizedCode }));
         } finally {
             loadingRef.current = false;
             setLoading(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         const scheduleAutomaticSubmit = () => {
@@ -102,8 +104,8 @@ const InspectionMode: React.FC = () => {
             ) : (
                 <Card style={{ textAlign: 'center', padding: '110px 48px' }}>
                     <BarcodeOutlined style={{ fontSize: 64, color: '#1677ff' }} />
-                    <Title level={3}>Čekám na první kód</Title>
-                    <Text type="secondary">Po načtení kódu se zde zobrazí detail kusu.</Text>
+                    <Title level={3}>{t('inspection.waitingTitle')}</Title>
+                    <Text type="secondary">{t('inspection.waitingDescription')}</Text>
                     {loading && <div style={{ marginTop: 24 }}><Spin /></div>}
                 </Card>
             )}

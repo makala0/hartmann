@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
-import csCS from 'antd/locale/cs_CZ';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -13,6 +12,7 @@ import MainLayout from './components/Layout/MainLayout';
 import apiClient from './api/client';
 import type { User } from './types';
 import Users from "./pages/Users";
+import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode; user: User | null }> = ({
                                                                                       children,
@@ -21,7 +21,7 @@ const PrivateRoute: React.FC<{ children: React.ReactNode; user: User | null }> =
     return user ? <>{children}</> : <Navigate to="/login" />;
 };
 
-const App: React.FC = () => {
+const AppRoutes: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -39,10 +39,12 @@ const App: React.FC = () => {
         checkAuth();
     }, []);
 
-    if (loading) return <div>Načítání...</div>;
+    const { antdLocale, t } = useLanguage();
+
+    if (loading) return <div>{t('common.loading')}</div>;
 
     return (
-        <ConfigProvider locale={csCS}>
+        <ConfigProvider locale={antdLocale}>
             <BrowserRouter>
                 <Routes>
                     <Route
@@ -120,5 +122,11 @@ const App: React.FC = () => {
         </ConfigProvider>
     );
 };
+
+const App: React.FC = () => (
+    <LanguageProvider>
+        <AppRoutes />
+    </LanguageProvider>
+);
 
 export default App;
