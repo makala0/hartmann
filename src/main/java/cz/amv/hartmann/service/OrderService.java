@@ -311,7 +311,7 @@ public class OrderService {
         result.setLineType(order.getLineType());
         result.setRecipe(order.getRecipe());
         result.setComment(order.getComment());
-        result.setItems(itemPage.getContent().stream().map(this::convertToDto).collect(Collectors.toList()));
+        result.setItems(convertToDtos(itemPage.getContent()));
         result.setTotalElements(itemPage.getTotalElements());
         result.setTotalPages(itemPage.getTotalPages());
         result.setCurrentPage(itemPage.getNumber());
@@ -381,13 +381,27 @@ public class OrderService {
         dto.setStation3ImagePath(item.getStation3ImagePath());
         dto.setAttentionFlag(item.getAttentionFlag());
         dto.setCriticalFlag(item.getCriticalFlag());
-        dto.setDefects(defectRepository.findByItemId(item.getItemId()).stream()
-                .map(this::convertDefectToDto)
-                .collect(Collectors.toList()));
+        dto.setDefects(List.of());
         return dto;
     }
 
-    private DefectDto convertDefectToDto(Defect defect) {
+    private List<ItemDto> convertToDtos(List<Item> items) {
+        List<ItemDto> itemDtos = items.stream().map(this::convertToDto).collect(Collectors.toList());
+        List<String> itemIds = items.stream().map(Item::getItemId).toList();
+        Map<String, List<DefectDto>> defectsByItemId = itemIds.isEmpty()
+                ? Map.of()
+                : defectRepository.findByItemIdIn(itemIds).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.groupingBy(DefectDto::getItemId));
+
+        itemDtos.forEach(itemDto -> itemDto.setDefects(
+                defectsByItemId.getOrDefault(itemDto.getItemId(), List.of())
+        ));
+
+        return itemDtos;
+    }
+
+    private DefectDto convertToDto(Defect defect) {
         DefectDto dto = new DefectDto();
         dto.setId(defect.getId());
         dto.setItemId(defect.getItemId());

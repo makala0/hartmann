@@ -33,9 +33,10 @@ const SafeImage: React.FC<{
 }> = ({ imagePath, alt, height = 200, preview = true, defects = [] }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
-    const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
+    const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
     const imageUrl = getImageUrl(imagePath);
     const { t } = useLanguage();
+    const previewDefects = useMemo(() => defects.filter((defect) => isValidDefect(defect)), [defects]);
 
     if (!imageUrl || error) {
         return (
@@ -80,10 +81,10 @@ const SafeImage: React.FC<{
                 width="100%"
                 height={height}
                 preview={preview}
-                style={{ objectFit: 'fill', borderRadius: 6 }}
+                style={{ objectFit: 'contain', borderRadius: 6, background: '#111' }}
                 onLoad={(event) => {
                     setLoading(false);
-                    setNaturalSize({
+                    setImageSize({
                         width: event.currentTarget.naturalWidth,
                         height: event.currentTarget.naturalHeight,
                     });
@@ -93,33 +94,58 @@ const SafeImage: React.FC<{
                     setError(true);
                 }}
             />
-            {!loading && defects.map((defect) => {
-                const defectStyle = getDefectStyle(defect, naturalSize);
-
-                if (!defectStyle) {
-                    return null;
-                }
-
-                return (
-                    <div
-                        key={defect.id}
-                        title={defect.type}
-                        style={{
-                            position: 'absolute',
-                            boxSizing: 'border-box',
-                            border: '3px solid #ff1f1f',
-                            backgroundColor: 'rgba(255, 31, 31, 0.16)',
-                            pointerEvents: 'none',
-                            zIndex: 2,
-                            ...defectStyle,
-                        }}
-                    />
-                );
-            })}
+            {!loading && previewDefects.map((defect) => (
+                <div
+                    key={defect.id}
+                    title={defect.type}
+                    style={{
+                        position: 'absolute',
+                        ...getDefectBoxStyle(defect, imageSize),
+                        border: '3px solid #ff1f1f',
+                        boxShadow: '0 0 0 1px rgba(255,255,255,0.85), 0 0 8px rgba(255,31,31,0.75)',
+                        pointerEvents: 'none',
+                        zIndex: 2,
+                        boxSizing: 'border-box',
+                    }}
+                />
+            ))}
         </div>
     );
 };
 
+const isValidDefect = (defect: Defect) => (
+    Number.isFinite(defect.positionX)
+    && Number.isFinite(defect.positionY)
+    && Number.isFinite(defect.width)
+    && Number.isFinite(defect.height)
+    && defect.width > 0
+    && defect.height > 0
+);
+
+const toPercent = (value: number, naturalSize: number) => {
+    if (value <= 1) {
+        return value * 100;
+    }
+
+    if (value <= 100) {
+        return value;
+    }
+
+    return naturalSize > 0 ? (value / naturalSize) * 100 : value;
+};
+
+const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
+
+const getDefectBoxStyle = (defect: Defect, imageSize: { width: number; height: number }): React.CSSProperties => ({
+    left: `${clampPercent(toPercent(defect.positionX, imageSize.width))}%`,
+    top: `${clampPercent(toPercent(defect.positionY, imageSize.height))}%`,
+    width: `${clampPercent(toPercent(defect.width, imageSize.width))}%`,
+    height: `${clampPercent(toPercent(defect.height, imageSize.height))}%`,
+});
+
+const getStationDefects = (item: Item, stationNumber: number) => (
+    (item.defects || []).filter((defect) => defect.station?.replace(/[^0-9]/g, '') === String(stationNumber))
+);
 
 interface ItemDetailContentProps {
     item: Item;
@@ -356,10 +382,10 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                     <Card title={t('itemDetail.stationImages')} size="small">
                         <Row gutter={[16, 16]}>
                             {[
-                                { num: 1, label: `${t('itemDetail.station')} 1`, path: item.station1ImagePath },
-                                { num: 2, label: `${t('itemDetail.station')} 2`, path: item.station2ImagePath },
-                                { num: 3, label: `${t('itemDetail.station')} 3`, path: item.station3ImagePath },
-                            ].map(({ num, label, path }, index) => (
+                                { label: `${t('itemDetail.station')} 1`, path: item.station1ImagePath, station: 1 },
+                                { label: `${t('itemDetail.station')} 2`, path: item.station2ImagePath, station: 2 },
+                                { label: `${t('itemDetail.station')} 3`, path: item.station3ImagePath, station: 3 },
+                            ].map(({ label, path, station }, index) => (
                                 <Col xs={24} xl={8} key={index}>
                                     <Card size="small" title={label}>
                                         <SafeImage
@@ -367,7 +393,7 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                                             alt={label}
                                             height="clamp(280px, 42vh, 560px)"
                                             preview={true}
-                                            defects={getDefectsForStation(num)}
+                                            defects={getStationDefects(item, station)}
                                         />
                                     </Card>
                                 </Col>
