@@ -1,22 +1,39 @@
-import React, { useState } from 'react';
-import { Badge, Card, Checkbox, Col, Descriptions, Divider, Image, Modal, Row, Space, Spin, Tag, Typography, message } from 'antd';
+import React, { useMemo, useState } from 'react';
+import { Badge, Card, Checkbox, Col, Descriptions, Divider, Image, Row, Space, Spin, Tag, Typography, message } from 'antd';
 import { AlertOutlined, CameraOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, ToolOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import apiClient from '../api/client';
-import type { Item } from '../types';
+import type { Defect, Item } from '../types';
 import { getImageUrl } from '../utils/imageUtils';
 import { useLanguage } from '../i18n/LanguageContext';
 
 const { Text } = Typography;
+
+const normalizeStation = (station: string | undefined): string => (station || '').toLowerCase().replace(/[^0-9a-z]/g, '');
+
+const getDefectStyle = (defect: Defect, naturalSize: { width: number; height: number } | null): React.CSSProperties | null => {
+    if (!naturalSize || naturalSize.width <= 0 || naturalSize.height <= 0) {
+        return null;
+    }
+
+    return {
+        left: `${(defect.positionX / naturalSize.width) * 100}%`,
+        top: `${(defect.positionY / naturalSize.height) * 100}%`,
+        width: `${(defect.width / naturalSize.width) * 100}%`,
+        height: `${(defect.height / naturalSize.height) * 100}%`,
+    };
+};
 
 const SafeImage: React.FC<{
     imagePath: string;
     alt: string;
     height?: number | string;
     preview?: boolean;
-}> = ({ imagePath, alt, height = 200, preview = true }) => {
+    defects?: Defect[];
+}> = ({ imagePath, alt, height = 200, preview = true, defects = [] }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
+    const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
     const imageUrl = getImageUrl(imagePath);
     const { t } = useLanguage();
 
@@ -63,13 +80,42 @@ const SafeImage: React.FC<{
                 width="100%"
                 height={height}
                 preview={preview}
-                style={{ objectFit: 'cover', borderRadius: 6 }}
-                onLoad={() => setLoading(false)}
+                style={{ objectFit: 'fill', borderRadius: 6 }}
+                onLoad={(event) => {
+                    setLoading(false);
+                    setNaturalSize({
+                        width: event.currentTarget.naturalWidth,
+                        height: event.currentTarget.naturalHeight,
+                    });
+                }}
                 onError={() => {
                     setLoading(false);
                     setError(true);
                 }}
             />
+            {!loading && defects.map((defect) => {
+                const defectStyle = getDefectStyle(defect, naturalSize);
+
+                if (!defectStyle) {
+                    return null;
+                }
+
+                return (
+                    <div
+                        key={defect.id}
+                        title={defect.type}
+                        style={{
+                            position: 'absolute',
+                            boxSizing: 'border-box',
+                            border: '3px solid #ff1f1f',
+                            backgroundColor: 'rgba(255, 31, 31, 0.16)',
+                            pointerEvents: 'none',
+                            zIndex: 2,
+                            ...defectStyle,
+                        }}
+                    />
+                );
+            })}
         </div>
     );
 };
@@ -83,6 +129,18 @@ interface ItemDetailContentProps {
 const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChange }) => {
     const [savingFlag, setSavingFlag] = useState<'attentionFlag' | 'criticalFlag' | null>(null);
     const { t } = useLanguage();
+    const defectsByStation = useMemo(() => {
+        return (item.defects || []).reduce<Record<string, Defect[]>>((acc, defect) => {
+            const station = normalizeStation(defect.station);
+            acc[station] = [...(acc[station] || []), defect];
+            return acc;
+        }, {});
+    }, [item.defects]);
+
+    const getDefectsForStation = (stationNumber: number): Defect[] => {
+        const stationAliases = [String(stationNumber), `station${stationNumber}`, `s${stationNumber}`];
+        return stationAliases.flatMap((station) => defectsByStation[station] || []);
+    };
 
     const getStatusColor = (status: string) => {
         switch (status?.toUpperCase()) {
@@ -298,10 +356,10 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                     <Card title={t('itemDetail.stationImages')} size="small">
                         <Row gutter={[16, 16]}>
                             {[
-                                { label: `${t('itemDetail.station')} 1`, path: item.station1ImagePath },
-                                { label: `${t('itemDetail.station')} 2`, path: item.station2ImagePath },
-                                { label: `${t('itemDetail.station')} 3`, path: item.station3ImagePath },
-                            ].map(({ label, path }, index) => (
+                                { num: 1, label: `${t('itemDetail.station')} 1`, path: item.station1ImagePath },
+                                { num: 2, label: `${t('itemDetail.station')} 2`, path: item.station2ImagePath },
+                                { num: 3, label: `${t('itemDetail.station')} 3`, path: item.station3ImagePath },
+                            ].map(({ num, label, path }, index) => (
                                 <Col xs={24} xl={8} key={index}>
                                     <Card size="small" title={label}>
                                         <SafeImage
@@ -309,6 +367,7 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                                             alt={label}
                                             height="clamp(280px, 42vh, 560px)"
                                             preview={true}
+                                            defects={getDefectsForStation(num)}
                                         />
                                     </Card>
                                 </Col>

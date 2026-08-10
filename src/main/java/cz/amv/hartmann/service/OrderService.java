@@ -2,6 +2,7 @@ package cz.amv.hartmann.service;
 
 import cz.amv.hartmann.domain.*;
 import cz.amv.hartmann.dto.*;
+import cz.amv.hartmann.repository.DefectRepository;
 import cz.amv.hartmann.repository.ItemRepository;
 import cz.amv.hartmann.repository.OrderRepository;
 import jakarta.persistence.criteria.Predicate;
@@ -21,17 +22,20 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ItemRepository itemRepository;
+    private final DefectRepository defectRepository;
     private final AppUserService appUserService;
     private final CriticalItemNotificationService criticalItemNotificationService;
 
     public OrderService(
             OrderRepository orderRepository,
             ItemRepository itemRepository,
+            DefectRepository defectRepository,
             AppUserService appUserService,
             CriticalItemNotificationService criticalItemNotificationService
     ) {
         this.orderRepository = orderRepository;
         this.itemRepository = itemRepository;
+        this.defectRepository = defectRepository;
         this.appUserService = appUserService;
         this.criticalItemNotificationService = criticalItemNotificationService;
     }
@@ -377,6 +381,22 @@ public class OrderService {
         dto.setStation3ImagePath(item.getStation3ImagePath());
         dto.setAttentionFlag(item.getAttentionFlag());
         dto.setCriticalFlag(item.getCriticalFlag());
+        dto.setDefects(defectRepository.findByItemId(item.getItemId()).stream()
+                .map(this::convertDefectToDto)
+                .collect(Collectors.toList()));
+        return dto;
+    }
+
+    private DefectDto convertDefectToDto(Defect defect) {
+        DefectDto dto = new DefectDto();
+        dto.setId(defect.getId());
+        dto.setItemId(defect.getItemId());
+        dto.setPositionX(defect.getPositionX());
+        dto.setPositionY(defect.getPositionY());
+        dto.setWidth(defect.getWidth());
+        dto.setHeight(defect.getHeight());
+        dto.setStation(defect.getStation());
+        dto.setType(defect.getType());
         return dto;
     }
 }

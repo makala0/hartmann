@@ -16,6 +16,17 @@ export interface Order {
     comment?: string;
 }
 
+export interface Defect {
+    id: number;
+    itemId: string;
+    positionX: number;
+    positionY: number;
+    width: number;
+    height: number;
+    station: string;
+    type: string;
+}
+
 export interface Item {
     id: number;
     itemId: string;
@@ -36,6 +47,7 @@ export interface Item {
     station3ImagePath: string;
     attentionFlag: boolean;
     criticalFlag: boolean;
+    defects?: Defect[];
 }
 
 export interface OrderDetailWithItems {

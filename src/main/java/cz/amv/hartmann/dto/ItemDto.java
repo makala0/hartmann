@@ -3,6 +3,7 @@ package cz.amv.hartmann.dto;
 import lombok.Data;
 
 import java.time.Instant;
+import java.util.List;
 
 @Data
 public class ItemDto {
@@ -25,4 +26,5 @@ public class ItemDto {
     private String station3ImagePath;
     private Boolean attentionFlag;
     private Boolean criticalFlag;
+    private List<DefectDto> defects;
 }
