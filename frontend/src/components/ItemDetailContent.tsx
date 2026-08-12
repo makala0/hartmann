@@ -13,30 +13,87 @@ const normalizeStation = (station: string | undefined): string => (station || ''
 
 const isPositiveFinite = (value: number) => Number.isFinite(value) && value > 0;
 
-const escapeSvgAttribute = (value: string) => value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+interface ImageSize {
+    width: number;
+    height: number;
+}
 
-const createDefectImageUrl = (
-    imageUrl: string,
-    imageSize: { width: number; height: number },
-    defects: Defect[],
-): string => {
-    const rects = defects.map((defect) => {
-        const leftFromImageLeft = imageSize.width - defect.positionX - defect.width;
-        const left = clamp(leftFromImageLeft, 0, imageSize.width);
-        const top = clamp(defect.positionY, 0, imageSize.height);
-        const width = clamp(defect.width, 0, imageSize.width - left);
-        const height = clamp(defect.height, 0, imageSize.height - top);
+interface DefectBox {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+}
 
-        return `<rect x="${left}" y="${top}" width="${width}" height="${height}" fill="none" stroke="#ff1f1f" stroke-width="6" vector-effect="non-scaling-stroke" />`;
-    }).join('');
+const DEFECT_MARKER_SIZE = 44;
+const DEFECT_STROKE_COLOR = '#ff1f1f';
+const DEFECT_FILL_COLOR = 'rgba(255, 31, 31, 0.12)';
 
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${imageSize.width}" height="${imageSize.height}" viewBox="0 0 ${imageSize.width} ${imageSize.height}"><image href="${escapeSvgAttribute(imageUrl)}" x="0" y="0" width="${imageSize.width}" height="${imageSize.height}" preserveAspectRatio="none" />${rects}</svg>`;
+const getDefectBox = (defect: Defect, imageSize: ImageSize): DefectBox => {
+    const rawWidth = clamp(defect.width, 0, imageSize.width);
+    const rawHeight = clamp(defect.height, 0, imageSize.height);
+    const hasReasonableBox = rawWidth <= imageSize.width * 0.15 && rawHeight <= imageSize.height * 0.15;
+    const width = hasReasonableBox ? Math.max(rawWidth, DEFECT_MARKER_SIZE) : DEFECT_MARKER_SIZE;
+    const height = hasReasonableBox ? Math.max(rawHeight, DEFECT_MARKER_SIZE) : DEFECT_MARKER_SIZE;
+    const centerX = normalizeDefectCoordinate(defect.positionX, imageSize.width);
+    const centerY = normalizeDefectCoordinate(defect.positionY, imageSize.height);
 
-    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+    return {
+        left: clamp(centerX - (width / 2), 0, imageSize.width - width),
+        top: clamp(centerY - (height / 2), 0, imageSize.height - height),
+        width,
+        height,
+    };
+};
+
+const normalizeDefectCoordinate = (value: number, max: number): number => {
+    if (Math.abs(value) <= 1) {
+        return value * max;
+    }
+
+    if (Math.abs(value) <= 100) {
+        return (value / 100) * max;
+    }
+
+    return clamp(value, 0, max);
+};
+
+const drawDefectBox = (context: CanvasRenderingContext2D, box: DefectBox) => {
+    context.save();
+    context.strokeStyle = DEFECT_STROKE_COLOR;
+    context.fillStyle = DEFECT_FILL_COLOR;
+    context.lineWidth = 4;
+    context.fillRect(box.left, box.top, box.width, box.height);
+    context.strokeRect(box.left, box.top, box.width, box.height);
+
+    const centerX = box.left + (box.width / 2);
+    const centerY = box.top + (box.height / 2);
+    const crossSize = Math.min(12, box.width / 3, box.height / 3);
+    context.beginPath();
+    context.moveTo(centerX - crossSize, centerY);
+    context.lineTo(centerX + crossSize, centerY);
+    context.moveTo(centerX, centerY - crossSize);
+    context.lineTo(centerX, centerY + crossSize);
+    context.stroke();
+    context.restore();
+};
+
+const createDefectImageUrl = (image: HTMLImageElement, defects: Defect[]): string => {
+    const imageSize = { width: image.naturalWidth, height: image.naturalHeight };
+    const canvas = document.createElement('canvas');
+    canvas.width = imageSize.width;
+    canvas.height = imageSize.height;
+
+    const context = canvas.getContext('2d');
+
+    if (!context) {
+        return image.src;
+    }
+
+    context.drawImage(image, 0, 0, imageSize.width, imageSize.height);
+    defects.forEach((defect) => drawDefectBox(context, getDefectBox(defect, imageSize)));
+
+    return canvas.toDataURL('image/png');
 };
 
 const SafeImage: React.FC<{
@@ -80,7 +137,13 @@ const SafeImage: React.FC<{
                 return;
             }
 
-            setRenderedImageUrl(createDefectImageUrl(imageUrl, imageSize, previewDefects));
+            try {
+                setRenderedImageUrl(createDefectImageUrl(image, previewDefects));
+            } catch (canvasError) {
+                console.error('Failed to render defect overlay:', canvasError);
+                setRenderedImageUrl(imageUrl);
+            }
+
             setLoading(false);
         };
 
@@ -142,7 +205,7 @@ const SafeImage: React.FC<{
                 alt={alt}
                 width="100%"
                 height={height}
-                preview={preview}
+                preview={preview ? { src: renderedImageUrl || imageUrl } : false}
                 style={{ objectFit: 'contain', borderRadius: 6, background: '#111' }}
             />
         </div>
