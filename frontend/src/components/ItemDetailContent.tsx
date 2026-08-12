@@ -11,6 +11,25 @@ const { Text } = Typography;
 
 const normalizeStation = (station: string | undefined): string => (station || '').toLowerCase().replace(/[^0-9a-z]/g, '');
 
+const toFiniteNumber = (value: unknown): number | null => {
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? value : null;
+    }
+
+    if (typeof value === 'string') {
+        const normalizedValue = value.trim().replace(',', '.');
+
+        if (normalizedValue === '') {
+            return null;
+        }
+
+        const parsedValue = Number(normalizedValue);
+        return Number.isFinite(parsedValue) ? parsedValue : null;
+    }
+
+    return null;
+};
+
 const isPositiveFinite = (value: number) => Number.isFinite(value) && value > 0;
 
 interface ImageSize {
@@ -30,13 +49,15 @@ const DEFECT_STROKE_COLOR = '#ff1f1f';
 const DEFECT_FILL_COLOR = 'rgba(255, 31, 31, 0.12)';
 
 const getDefectBox = (defect: Defect, imageSize: ImageSize): DefectBox => {
-    const rawWidth = clamp(defect.width, 0, imageSize.width);
-    const rawHeight = clamp(defect.height, 0, imageSize.height);
+    const rawPositionX = toFiniteNumber(defect.positionX) || 0;
+    const rawPositionY = toFiniteNumber(defect.positionY) || 0;
+    const rawWidth = clamp(toFiniteNumber(defect.width) || 0, 0, imageSize.width);
+    const rawHeight = clamp(toFiniteNumber(defect.height) || 0, 0, imageSize.height);
     const hasReasonableBox = rawWidth <= imageSize.width * 0.15 && rawHeight <= imageSize.height * 0.15;
     const width = hasReasonableBox ? Math.max(rawWidth, DEFECT_MARKER_SIZE) : DEFECT_MARKER_SIZE;
     const height = hasReasonableBox ? Math.max(rawHeight, DEFECT_MARKER_SIZE) : DEFECT_MARKER_SIZE;
-    const centerX = normalizeDefectCoordinate(defect.positionX, imageSize.width);
-    const centerY = normalizeDefectCoordinate(defect.positionY, imageSize.height);
+    const centerX = normalizeDefectCoordinate(rawPositionX, imageSize.width);
+    const centerY = normalizeDefectCoordinate(rawPositionY, imageSize.height);
 
     return {
         left: clamp(centerX - (width / 2), 0, imageSize.width - width),
@@ -119,6 +140,10 @@ const SafeImage: React.FC<{
 
         let cancelled = false;
         const image = new window.Image();
+
+        if (isCrossOriginUrl(imageUrl)) {
+            image.crossOrigin = 'use-credentials';
+        }
 
         setLoading(true);
         setError(false);
@@ -212,14 +237,27 @@ const SafeImage: React.FC<{
     );
 };
 
-const isValidDefect = (defect: Defect) => (
-    Number.isFinite(defect.positionX)
-    && Number.isFinite(defect.positionY)
-    && Number.isFinite(defect.width)
-    && Number.isFinite(defect.height)
-    && defect.width > 0
-    && defect.height > 0
-);
+const isCrossOriginUrl = (url: string): boolean => {
+    try {
+        return new URL(url, window.location.href).origin !== window.location.origin;
+    } catch {
+        return false;
+    }
+};
+
+const isValidDefect = (defect: Defect) => {
+    const positionX = toFiniteNumber(defect.positionX);
+    const positionY = toFiniteNumber(defect.positionY);
+    const width = toFiniteNumber(defect.width);
+    const height = toFiniteNumber(defect.height);
+
+    return positionX !== null
+        && positionY !== null
+        && width !== null
+        && height !== null
+        && width > 0
+        && height > 0;
+};
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
@@ -240,8 +278,9 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
     }, [item.defects]);
 
     const getDefectsForStation = (stationNumber: number): Defect[] => {
-        const stationAliases = [String(stationNumber), `station${stationNumber}`, `s${stationNumber}`, `st${stationNumber}`];
-        return stationAliases.flatMap((station) => defectsByStation[station] || []);
+        return Object.entries(defectsByStation)
+            .filter(([station]) => station === String(stationNumber) || station.endsWith(String(stationNumber)))
+            .flatMap(([, defects]) => defects);
     };
 
     const getStatusColor = (status: string) => {

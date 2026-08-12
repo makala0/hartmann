@@ -169,7 +169,7 @@ public class OrderService {
 
         Map<String, Object> result = new HashMap<>();
         result.put("orderId", order.getId());
-        result.put("item", convertToDto(item));
+        result.put("item", convertToDtoWithDefects(item));
         return result;
     }
 
@@ -359,7 +359,7 @@ public class OrderService {
 //            );
         }
 
-        return convertToDto(savedItem);
+        return convertToDtoWithDefects(savedItem);
     }
 
     private ItemDto convertToDto(Item item) {
@@ -384,6 +384,14 @@ public class OrderService {
         dto.setAttentionFlag(item.getAttentionFlag());
         dto.setCriticalFlag(item.getCriticalFlag());
         dto.setDefects(List.of());
+        return dto;
+    }
+
+    private ItemDto convertToDtoWithDefects(Item item) {
+        ItemDto dto = convertToDto(item);
+        dto.setDefects(defectRepository.findByItemIdIn(List.of(item.getItemId())).stream()
+                .map(this::convertToDto)
+                .toList());
         return dto;
     }
 

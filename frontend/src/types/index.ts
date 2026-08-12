@@ -16,13 +16,15 @@ export interface Order {
     comment?: string;
 }
 
+type NumericApiValue = number | string | null | undefined;
+
 export interface Defect {
     id: number;
     itemId: string;
-    positionX: number;
-    positionY: number;
-    width: number;
-    height: number;
+    positionX: NumericApiValue;
+    positionY: NumericApiValue;
+    width: NumericApiValue;
+    height: NumericApiValue;
     station: string;
     type: string;
 }
