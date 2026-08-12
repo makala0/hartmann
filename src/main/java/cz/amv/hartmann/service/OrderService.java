@@ -7,6 +7,7 @@ import cz.amv.hartmann.repository.ItemRepository;
 import cz.amv.hartmann.repository.OrderRepository;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -209,7 +210,8 @@ public class OrderService {
     }
 
     public Page<ItemDto> searchItems(ItemFilter filter, Pageable pageable) {
-        return itemRepository.findAll(toItemSpecification(null, filter), pageable).map(this::convertToDto);
+        Page<Item> itemPage = itemRepository.findAll(toItemSpecification(null, filter), pageable);
+        return new PageImpl<>(convertToDtos(itemPage.getContent()), pageable, itemPage.getTotalElements());
     }
 
     public Page<Item> searchItemsInOrder(Long orderId, ItemFilter filter, Pageable pageable) {

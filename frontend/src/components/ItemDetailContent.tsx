@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Badge, Card, Checkbox, Col, Descriptions, Divider, Image, Row, Space, Spin, Tag, Typography, message } from 'antd';
 import { AlertOutlined, CameraOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, ToolOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -11,17 +11,32 @@ const { Text } = Typography;
 
 const normalizeStation = (station: string | undefined): string => (station || '').toLowerCase().replace(/[^0-9a-z]/g, '');
 
-const getDefectStyle = (defect: Defect, naturalSize: { width: number; height: number } | null): React.CSSProperties | null => {
-    if (!naturalSize || naturalSize.width <= 0 || naturalSize.height <= 0) {
-        return null;
-    }
+const isPositiveFinite = (value: number) => Number.isFinite(value) && value > 0;
 
-    return {
-        left: `${(defect.positionX / naturalSize.width) * 100}%`,
-        top: `${(defect.positionY / naturalSize.height) * 100}%`,
-        width: `${(defect.width / naturalSize.width) * 100}%`,
-        height: `${(defect.height / naturalSize.height) * 100}%`,
-    };
+const escapeSvgAttribute = (value: string) => value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+const createDefectImageUrl = (
+    imageUrl: string,
+    imageSize: { width: number; height: number },
+    defects: Defect[],
+): string => {
+    const rects = defects.map((defect) => {
+        const leftFromImageLeft = imageSize.width - defect.positionX - defect.width;
+        const left = clamp(leftFromImageLeft, 0, imageSize.width);
+        const top = clamp(defect.positionY, 0, imageSize.height);
+        const width = clamp(defect.width, 0, imageSize.width - left);
+        const height = clamp(defect.height, 0, imageSize.height - top);
+
+        return `<rect x="${left}" y="${top}" width="${width}" height="${height}" fill="none" stroke="#ff1f1f" stroke-width="6" vector-effect="non-scaling-stroke" />`;
+    }).join('');
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${imageSize.width}" height="${imageSize.height}" viewBox="0 0 ${imageSize.width} ${imageSize.height}"><image href="${escapeSvgAttribute(imageUrl)}" x="0" y="0" width="${imageSize.width}" height="${imageSize.height}" preserveAspectRatio="none" />${rects}</svg>`;
+
+    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 };
 
 const SafeImage: React.FC<{
@@ -33,10 +48,57 @@ const SafeImage: React.FC<{
 }> = ({ imagePath, alt, height = 200, preview = true, defects = [] }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
-    const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+    const [renderedImageUrl, setRenderedImageUrl] = useState<string | null>(null);
     const imageUrl = getImageUrl(imagePath);
     const { t } = useLanguage();
     const previewDefects = useMemo(() => defects.filter((defect) => isValidDefect(defect)), [defects]);
+
+    useEffect(() => {
+        if (!imageUrl) {
+            setLoading(false);
+            setRenderedImageUrl(null);
+            return;
+        }
+
+        let cancelled = false;
+        const image = new window.Image();
+
+        setLoading(true);
+        setError(false);
+        setRenderedImageUrl(null);
+
+        image.onload = () => {
+            if (cancelled) {
+                return;
+            }
+
+            const imageSize = { width: image.naturalWidth, height: image.naturalHeight };
+
+            if (!isPositiveFinite(imageSize.width) || !isPositiveFinite(imageSize.height) || previewDefects.length === 0) {
+                setRenderedImageUrl(imageUrl);
+                setLoading(false);
+                return;
+            }
+
+            setRenderedImageUrl(createDefectImageUrl(imageUrl, imageSize, previewDefects));
+            setLoading(false);
+        };
+
+        image.onerror = () => {
+            if (cancelled) {
+                return;
+            }
+
+            setError(true);
+            setLoading(false);
+        };
+
+        image.src = imageUrl;
+
+        return () => {
+            cancelled = true;
+        };
+    }, [imageUrl, previewDefects]);
 
     if (!imageUrl || error) {
         return (
@@ -76,39 +138,13 @@ const SafeImage: React.FC<{
                 </div>
             )}
             <Image
-                src={imageUrl}
+                src={renderedImageUrl || imageUrl}
                 alt={alt}
                 width="100%"
                 height={height}
                 preview={preview}
                 style={{ objectFit: 'contain', borderRadius: 6, background: '#111' }}
-                onLoad={(event) => {
-                    setLoading(false);
-                    setImageSize({
-                        width: event.currentTarget.naturalWidth,
-                        height: event.currentTarget.naturalHeight,
-                    });
-                }}
-                onError={() => {
-                    setLoading(false);
-                    setError(true);
-                }}
             />
-            {!loading && previewDefects.map((defect) => (
-                <div
-                    key={defect.id}
-                    title={defect.type}
-                    style={{
-                        position: 'absolute',
-                        ...getDefectBoxStyle(defect, imageSize),
-                        border: '3px solid #ff1f1f',
-                        boxShadow: '0 0 0 1px rgba(255,255,255,0.85), 0 0 8px rgba(255,31,31,0.75)',
-                        pointerEvents: 'none',
-                        zIndex: 2,
-                        boxSizing: 'border-box',
-                    }}
-                />
-            ))}
         </div>
     );
 };
@@ -122,30 +158,7 @@ const isValidDefect = (defect: Defect) => (
     && defect.height > 0
 );
 
-const toPercent = (value: number, naturalSize: number) => {
-    if (value <= 1) {
-        return value * 100;
-    }
-
-    if (value <= 100) {
-        return value;
-    }
-
-    return naturalSize > 0 ? (value / naturalSize) * 100 : value;
-};
-
-const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
-
-const getDefectBoxStyle = (defect: Defect, imageSize: { width: number; height: number }): React.CSSProperties => ({
-    left: `${clampPercent(toPercent(defect.positionX, imageSize.width))}%`,
-    top: `${clampPercent(toPercent(defect.positionY, imageSize.height))}%`,
-    width: `${clampPercent(toPercent(defect.width, imageSize.width))}%`,
-    height: `${clampPercent(toPercent(defect.height, imageSize.height))}%`,
-});
-
-const getStationDefects = (item: Item, stationNumber: number) => (
-    (item.defects || []).filter((defect) => defect.station?.replace(/[^0-9]/g, '') === String(stationNumber))
-);
+const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 interface ItemDetailContentProps {
     item: Item;
@@ -164,7 +177,7 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
     }, [item.defects]);
 
     const getDefectsForStation = (stationNumber: number): Defect[] => {
-        const stationAliases = [String(stationNumber), `station${stationNumber}`, `s${stationNumber}`];
+        const stationAliases = [String(stationNumber), `station${stationNumber}`, `s${stationNumber}`, `st${stationNumber}`];
         return stationAliases.flatMap((station) => defectsByStation[station] || []);
     };
 
@@ -393,7 +406,7 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                                             alt={label}
                                             height="clamp(280px, 42vh, 560px)"
                                             preview={true}
-                                            defects={getStationDefects(item, station)}
+                                            defects={getDefectsForStation(station)}
                                         />
                                     </Card>
                                 </Col>
