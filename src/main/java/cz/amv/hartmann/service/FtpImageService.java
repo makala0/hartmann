@@ -5,6 +5,8 @@ import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPReply;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -12,6 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.InvalidPathException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -19,6 +22,8 @@ import java.time.Duration;
 @Service
 public class FtpImageService {
 
+    private final String source;
+    private final Path localBasePath;
     private final String host;
     private final int port;
     private final String username;
@@ -29,6 +34,8 @@ public class FtpImageService {
     private final int dataTimeoutMillis;
 
     public FtpImageService(
+            @Value("${hartmann.images.source:${IMAGES_SOURCE:ftp}}") String source,
+            @Value("${hartmann.images.local.base-path:${IMAGES_LOCAL_BASE_PATH:./images}}") String localBasePath,
             @Value("${hartmann.images.ftp.base-url:${FTP_BASE_URL:}}") String baseUrl,
             @Value("${hartmann.images.ftp.host:${FTP_HOST:}}") String host,
             @Value("${hartmann.images.ftp.port:${FTP_PORT:21}}") int port,
@@ -39,7 +46,12 @@ public class FtpImageService {
             @Value("${hartmann.images.ftp.connect-timeout-millis:${FTP_CONNECT_TIMEOUT_MILLIS:5000}}") int connectTimeoutMillis,
             @Value("${hartmann.images.ftp.data-timeout-millis:${FTP_DATA_TIMEOUT_MILLIS:10000}}") int dataTimeoutMillis
     ) {
-        FtpConnectionConfig config = FtpConnectionConfig.from(baseUrl, host, port, username, password, basePath);
+        this.source = source.trim().toLowerCase();
+        this.localBasePath = Paths.get(localBasePath).toAbsolutePath().normalize();
+
+        FtpConnectionConfig config = isLocalSource()
+                ? new FtpConnectionConfig(host, port, username, password, basePath)
+                : FtpConnectionConfig.from(baseUrl, host, port, username, password, basePath);
 
         this.host = config.host();
         this.port = config.port();
@@ -52,6 +64,16 @@ public class FtpImageService {
     }
 
     public FtpImage loadImage(String imagePath) throws IOException {
+        if (isLocalSource()) {
+            Path localPath = resolveLocalImagePath(imagePath);
+
+            if (!Files.isRegularFile(localPath)) {
+                return FtpImage.notFound();
+            }
+
+            return new FtpImage(new FileSystemResource(localPath), Files.size(localPath), true);
+        }
+
         String ftpPath = resolveImagePath(imagePath);
         FTPClient ftpClient = connect();
 
@@ -70,6 +92,10 @@ public class FtpImageService {
     }
 
     public boolean exists(String imagePath) throws IOException {
+        if (isLocalSource()) {
+            return Files.isRegularFile(resolveLocalImagePath(imagePath));
+        }
+
         String ftpPath = resolveImagePath(imagePath);
         FTPClient ftpClient = connect();
 
@@ -82,6 +108,24 @@ public class FtpImageService {
         } finally {
             disconnect(ftpClient);
         }
+    }
+
+    private boolean isLocalSource() {
+        return "local".equals(source) || "disk".equals(source) || "filesystem".equals(source);
+    }
+
+    private Path resolveLocalImagePath(String imagePath) {
+        if (!StringUtils.hasText(imagePath)) {
+            throw new IllegalArgumentException("Image path must not be empty");
+        }
+
+        Path resolvedPath = localBasePath.resolve(removeLeadingSlash(imagePath.trim())).normalize();
+
+        if (!resolvedPath.startsWith(localBasePath)) {
+            throw new IllegalArgumentException("Image path is outside configured local image base path");
+        }
+
+        return resolvedPath;
     }
 
     private FTPClient connect() throws IOException {
@@ -250,7 +294,7 @@ public class FtpImageService {
         }
     }
 
-    public record FtpImage(ByteArrayResource resource, long contentLength, boolean found) {
+    public record FtpImage(Resource resource, long contentLength, boolean found) {
         public static FtpImage notFound() {
             return new FtpImage(null, 0, false);
         }
