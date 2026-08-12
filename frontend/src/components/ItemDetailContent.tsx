@@ -44,18 +44,17 @@ interface DefectBox {
     height: number;
 }
 
-const DEFECT_MARKER_SIZE = 44;
+const DEFECT_MIN_MARKER_SIZE = 44;
 const DEFECT_STROKE_COLOR = '#ff1f1f';
 const DEFECT_FILL_COLOR = 'rgba(255, 31, 31, 0.12)';
 
 const getDefectBox = (defect: Defect, imageSize: ImageSize): DefectBox => {
     const rawPositionX = toFiniteNumber(defect.positionX) || 0;
     const rawPositionY = toFiniteNumber(defect.positionY) || 0;
-    const rawWidth = clamp(toFiniteNumber(defect.width) || 0, 0, imageSize.width);
-    const rawHeight = clamp(toFiniteNumber(defect.height) || 0, 0, imageSize.height);
-    const hasReasonableBox = rawWidth <= imageSize.width * 0.15 && rawHeight <= imageSize.height * 0.15;
-    const width = hasReasonableBox ? Math.max(rawWidth, DEFECT_MARKER_SIZE) : DEFECT_MARKER_SIZE;
-    const height = hasReasonableBox ? Math.max(rawHeight, DEFECT_MARKER_SIZE) : DEFECT_MARKER_SIZE;
+    const rawWidth = toFiniteNumber(defect.width) || 0;
+    const rawHeight = toFiniteNumber(defect.height) || 0;
+    const width = normalizeDefectSize(rawWidth, imageSize.width);
+    const height = normalizeDefectSize(rawHeight, imageSize.height);
     const centerX = normalizeDefectCoordinate(rawPositionX, imageSize.width);
     const centerY = normalizeDefectCoordinate(rawPositionY, imageSize.height);
 
@@ -77,6 +76,18 @@ const normalizeDefectCoordinate = (value: number, max: number): number => {
     }
 
     return clamp(value, 0, max);
+};
+
+const normalizeDefectSize = (value: number, max: number): number => {
+    let normalizedSize = value;
+
+    if (Math.abs(value) <= 1) {
+        normalizedSize = value * max;
+    } else if (Math.abs(value) <= 100) {
+        normalizedSize = (value / 100) * max;
+    }
+
+    return clamp(Math.max(normalizedSize, DEFECT_MIN_MARKER_SIZE), DEFECT_MIN_MARKER_SIZE, max);
 };
 
 const drawDefectBox = (context: CanvasRenderingContext2D, box: DefectBox) => {
