@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-    Alert,
     Badge,
-    Button,
     Card,
     Checkbox,
     Col,
@@ -23,6 +21,7 @@ import apiClient from '../api/client';
 import type { Defect, Item } from '../types';
 import { getImageUrl } from '../utils/imageUtils';
 import { useLanguage } from '../i18n/LanguageContext';
+import { CRITICAL_NOTIFICATIONS_CHANGED_EVENT } from './CriticalNotificationsBanner';
 
 const { Text } = Typography;
 
@@ -296,8 +295,6 @@ interface ItemDetailContentProps {
 
 const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChange }) => {
     const [savingFlag, setSavingFlag] = useState<'attentionFlag' | 'criticalFlag' | null>(null);
-    const [isOnline, setIsOnline] = useState(() => navigator.onLine);
-    const [pendingNotifications, setPendingNotifications] = useState<Item[]>([]);
     const { t } = useLanguage();
     const defectsByStation = useMemo(() => {
         return (item.defects || []).reduce<Record<string, Defect[]>>((acc, defect) => {
@@ -306,49 +303,6 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
             return acc;
         }, {});
     }, [item.defects]);
-
-    const fetchPendingNotifications = async () => {
-        try {
-            const response = await apiClient.get<Item[]>('/critical-notifications/pending');
-            setPendingNotifications(response.data);
-        } catch (error) {
-            console.error('Failed to load pending critical notifications:', error);
-        }
-    };
-
-    useEffect(() => {
-        const updateOnlineStatus = () => setIsOnline(navigator.onLine);
-
-        fetchPendingNotifications();
-        window.addEventListener('online', updateOnlineStatus);
-        window.addEventListener('offline', updateOnlineStatus);
-
-        return () => {
-            window.removeEventListener('online', updateOnlineStatus);
-            window.removeEventListener('offline', updateOnlineStatus);
-        };
-    }, []);
-
-    const hasPendingCurrentCriticalNotification = Boolean(item.criticalFlag && !item.criticalNotificationSent)
-        || pendingNotifications.some((notification) => notification.id === item.id);
-
-    const sendPendingCriticalNotifications = async () => {
-        setSavingFlag('criticalFlag');
-        try {
-            const response = await apiClient.post<Item[]>('/critical-notifications/pending/send');
-            setPendingNotifications(response.data.filter((notification) => !notification.criticalNotificationSent));
-            const updatedCurrentItem = response.data.find((notification) => notification.id === item.id);
-            if (updatedCurrentItem) {
-                onItemChange?.(updatedCurrentItem);
-            }
-            message.success(t('itemDetail.pendingCriticalSent'));
-        } catch (error) {
-            console.error('Failed to send pending critical notifications:', error);
-            message.error(t('itemDetail.pendingCriticalSendFailed'));
-        } finally {
-            setSavingFlag(null);
-        }
-    };
 
     const getDefectsForStation = (stationNumber: number): Defect[] => {
         return Object.entries(defectsByStation)
@@ -387,7 +341,7 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
         try {
             const response = await apiClient.put<Item>(`/dashboard/item/${item.id}/flags`, flags);
             onItemChange?.(response.data);
-            await fetchPendingNotifications();
+            window.dispatchEvent(new Event(CRITICAL_NOTIFICATIONS_CHANGED_EVENT));
             message.success(t('itemDetail.flagSaved'));
         } catch (error) {
             console.error('Failed to update item flags:', error);
@@ -406,25 +360,6 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
             styles={{ body: { padding: 12 } }}
         >
 
-            {hasPendingCurrentCriticalNotification && (
-                <Alert
-                    type="warning"
-                    showIcon
-                    message={t('itemDetail.pendingCriticalTitle')}
-                    description={isOnline ? t('itemDetail.pendingCriticalOnlineDescription') : t('itemDetail.pendingCriticalOfflineDescription')}
-                    action={(
-                        <Button
-                            danger
-                            type="primary"
-                            disabled={!isOnline || savingFlag !== null}
-                            loading={savingFlag === 'criticalFlag'}
-                            onClick={sendPendingCriticalNotifications}
-                        >
-                            {t('itemDetail.sendPendingCritical')}
-                        </Button>
-                    )}
-                />
-            )}
             <Row gutter={[12, 12]}>
                 <Col xs={24} sm={12}>
                     <label

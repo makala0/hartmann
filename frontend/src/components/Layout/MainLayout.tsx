@@ -12,6 +12,7 @@ import type { MenuProps } from 'antd';
 import type { User } from '../../types';
 import apiClient from '../../api/client';
 import { useLanguage } from '../../i18n/LanguageContext';
+import CriticalNotificationsBanner from '../CriticalNotificationsBanner';
 
 const { Header, Content, Footer } = Layout;
 
@@ -124,6 +125,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user, onLogout }) => 
             </Header>
 
             <Content style={{ padding: '24px 50px' }}>
+                <CriticalNotificationsBanner />
                 {children}
             </Content>
 
