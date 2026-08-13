@@ -1,5 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Badge, Card, Checkbox, Col, Descriptions, Divider, Image, Row, Space, Spin, Tag, Typography, message } from 'antd';
+import {
+    Badge,
+    Card,
+    Checkbox,
+    Col,
+    Descriptions,
+    Divider,
+    Image,
+    Row,
+    Space,
+    Spin,
+    Tag,
+    Typography,
+    message,
+    Modal
+} from 'antd';
 import { AlertOutlined, CameraOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, ToolOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import apiClient from '../api/client';
@@ -397,17 +412,17 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                                     criticalFlag: nextCriticalFlag,
                                 }, 'criticalFlag');
 
-                                // if (nextCriticalFlag && !item.criticalFlag) {
-                                //     Modal.confirm({
-                                //         title: t('itemDetail.confirmCriticalTitle'),
-                                //         content: t('itemDetail.confirmCriticalContent'),
-                                //         okText: t('itemDetail.confirmCriticalOk'),
-                                //         cancelText: t('common.cancel'),
-                                //         okButtonProps: { danger: true },
-                                //         onOk: saveCriticalFlag,
-                                //     });
-                                //     return;
-                                // }
+                                if (nextCriticalFlag && !item.criticalFlag) {
+                                    Modal.confirm({
+                                        title: t('itemDetail.confirmCriticalTitle'),
+                                        content: t('itemDetail.confirmCriticalContent'),
+                                        okText: t('itemDetail.confirmCriticalOk'),
+                                        cancelText: t('common.cancel'),
+                                        okButtonProps: { danger: true },
+                                        onOk: saveCriticalFlag,
+                                    });
+                                    return;
+                                }
 
                                 saveCriticalFlag();
                             }}

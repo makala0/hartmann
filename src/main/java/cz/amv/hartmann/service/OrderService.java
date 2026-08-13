@@ -353,10 +353,10 @@ public class OrderService {
 
         Item savedItem = itemRepository.saveAndFlush(item);
         if (!wasCritical && shouldBeCritical) {
-//            criticalItemNotificationService.notifyCriticalFlagEnabled(
-//                    savedItem,
-//                    appUserService.findByEmail(changedByEmail)
-//            );
+          criticalItemNotificationService.notifyCriticalFlagEnabled(
+                    savedItem,
+                    appUserService.findByEmail(changedByEmail)
+            );
         }
 
         return convertToDtoWithDefects(savedItem);
