@@ -21,6 +21,8 @@ public interface ItemRepository extends JpaRepository<Item, Long>, JpaSpecificat
 
     List<Item> findByCriticalFlagTrueAndCriticalNotificationSentFalse();
 
+    List<Item> findByAttentionFlagTrueAndWarningNotificationSentFalse();
+
     @Query("""
             SELECT i.orderNumber AS orderNumber,
                    SUM(CASE WHEN UPPER(i.totalResult) = 'OK' THEN 1L ELSE 0L END) AS okCount,

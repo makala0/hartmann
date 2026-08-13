@@ -27,5 +27,6 @@ public class ItemDto {
     private Boolean attentionFlag;
     private Boolean criticalFlag;
     private Boolean criticalNotificationSent;
+    private Boolean warningNotificationSent;
     private List<DefectDto> defects;
 }

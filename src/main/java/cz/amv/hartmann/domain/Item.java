@@ -107,4 +107,10 @@ public class Item {
     @ColumnDefault("1")
     @Column(name = "critical_notification_sent", nullable = false)
     private Boolean criticalNotificationSent = true;
+
+    @Setter
+    @NotNull
+    @ColumnDefault("1")
+    @Column(name = "warning_notification_sent", nullable = false)
+    private Boolean warningNotificationSent = true;
 }

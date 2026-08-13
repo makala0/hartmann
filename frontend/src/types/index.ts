@@ -50,6 +50,7 @@ export interface Item {
     attentionFlag: boolean;
     criticalFlag: boolean;
     criticalNotificationSent: boolean;
+    warningNotificationSent: boolean;
     defects?: Defect[];
 }
 

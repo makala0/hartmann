@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -345,12 +346,15 @@ public class OrderService {
     public ItemDto updateItemFlags(Long itemId, Boolean attentionFlag, Boolean criticalFlag, String changedByEmail) {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new RuntimeException("Kus nenalezen: " + itemId));
+        boolean wasWarning = Boolean.TRUE.equals(item.getAttentionFlag());
+        boolean shouldBeWarning = Boolean.TRUE.equals(attentionFlag);
         boolean wasCritical = Boolean.TRUE.equals(item.getCriticalFlag());
         boolean shouldBeCritical = Boolean.TRUE.equals(criticalFlag);
 
-        item.setAttentionFlag(Boolean.TRUE.equals(attentionFlag));
+        item.setAttentionFlag(shouldBeWarning);
         item.setCriticalFlag(shouldBeCritical);
 
+        item.setWarningNotificationSent(wasWarning || !shouldBeWarning);
         item.setCriticalNotificationSent(wasCritical || !shouldBeCritical);
 
         Item savedItem = itemRepository.saveAndFlush(item);
@@ -364,6 +368,21 @@ public class OrderService {
         }
 
         return convertToDtoWithDefects(savedItem);
+    }
+
+    @Scheduled(cron = "0 0 0 * * *")
+    @Transactional
+    public void sendPendingWarningNotifications() {
+        List<Item> pendingItems = itemRepository.findByAttentionFlagTrueAndWarningNotificationSentFalse();
+
+        for (Item item : pendingItems) {
+            boolean notificationSent = criticalItemNotificationService.notifyWarningFlagEnabled(item);
+            if (notificationSent) {
+                item.setWarningNotificationSent(true);
+            }
+        }
+
+        itemRepository.saveAllAndFlush(pendingItems);
     }
 
     @Transactional(readOnly = true)
@@ -412,6 +431,7 @@ public class OrderService {
         dto.setAttentionFlag(item.getAttentionFlag());
         dto.setCriticalFlag(item.getCriticalFlag());
         dto.setCriticalNotificationSent(item.getCriticalNotificationSent());
+        dto.setWarningNotificationSent(item.getWarningNotificationSent());
         dto.setDefects(List.of());
         return dto;
     }

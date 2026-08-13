@@ -20,7 +20,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CriticalItemNotificationService {
 
-    @Value("${smtp.email = ${MAIL_SENDER}}") String mailSenderString;
+    @Value("${smtp.email:${MAIL_SENDER}}")
+    private String mailSenderString;
     private static final Logger LOGGER = LoggerFactory.getLogger(CriticalItemNotificationService.class);
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
             .withZone(ZoneId.systemDefault());
@@ -29,6 +30,22 @@ public class CriticalItemNotificationService {
     private final AppUserService appUserService;
 
     public boolean notifyCriticalFlagEnabled(Item item, AppUser user) {
+        return sendItemNotification(
+                item,
+                "Kritický kus označen: " + item.getItemId(),
+                "Uživatel " + user.getEmail() + " označil kus jako kritický."
+        );
+    }
+
+    public boolean notifyWarningFlagEnabled(Item item) {
+        return sendItemNotification(
+                item,
+                "Varovný kus označen: " + item.getItemId(),
+                "Kus byl označen jako varovný a je zařazený do půlnočního souhrnu."
+        );
+    }
+
+    private boolean sendItemNotification(Item item, String subject, String intro) {
         List<String> recipients = appUserService.findCriticalNotificationRecipientEmails();
         if (recipients == null || recipients.isEmpty()) {
             return true;
@@ -43,20 +60,20 @@ public class CriticalItemNotificationService {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(mailSenderString);
         message.setTo(recipients.toArray(String[]::new));
-        message.setSubject("Kritický kus označen: " + item.getItemId());
-        message.setText(buildMessage(item, user));
+        message.setSubject(subject);
+        message.setText(buildMessage(item, intro));
 
         try {
             mailSender.send(message);
             return true;
         } catch (MailException ex) {
-            LOGGER.error("Critical item notification email could not be sent for item {}.", item.getId(), ex);
+            LOGGER.error("Item notification email could not be sent for item {}.", item.getId(), ex);
             return false;
         }
     }
 
-    private String buildMessage(Item item, AppUser user) {
-        return "Uživatel " + user.getEmail() + " označil kus jako kritický.\n\n"
+    private String buildMessage(Item item, String intro) {
+        return intro + "\n\n"
                 + "ID kusu: " + item.getItemId() + "\n"
                 + "Sériové číslo: " + item.getSerialNumber() + "\n"
                 + "Zakázka: " + item.getOrderNumber() + "\n"
