@@ -351,15 +351,43 @@ public class OrderService {
         item.setAttentionFlag(Boolean.TRUE.equals(attentionFlag));
         item.setCriticalFlag(shouldBeCritical);
 
+        item.setCriticalNotificationSent(wasCritical || !shouldBeCritical);
+
         Item savedItem = itemRepository.saveAndFlush(item);
         if (!wasCritical && shouldBeCritical) {
-          criticalItemNotificationService.notifyCriticalFlagEnabled(
+            boolean notificationSent = criticalItemNotificationService.notifyCriticalFlagEnabled(
                     savedItem,
                     appUserService.findByEmail(changedByEmail)
             );
+            savedItem.setCriticalNotificationSent(notificationSent);
+            savedItem = itemRepository.saveAndFlush(savedItem);
         }
 
         return convertToDtoWithDefects(savedItem);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ItemDto> findPendingCriticalNotifications() {
+        return itemRepository.findByCriticalFlagTrueAndCriticalNotificationSentFalse().stream()
+                .map(this::convertToDto)
+                .toList();
+    }
+
+    @Transactional
+    public List<ItemDto> sendPendingCriticalNotifications(String changedByEmail) {
+        AppUser user = appUserService.findByEmail(changedByEmail);
+        List<Item> pendingItems = itemRepository.findByCriticalFlagTrueAndCriticalNotificationSentFalse();
+
+        for (Item item : pendingItems) {
+            boolean notificationSent = criticalItemNotificationService.notifyCriticalFlagEnabled(item, user);
+            if (notificationSent) {
+                item.setCriticalNotificationSent(true);
+            }
+        }
+
+        return itemRepository.saveAllAndFlush(pendingItems).stream()
+                .map(this::convertToDto)
+                .toList();
     }
 
     private ItemDto convertToDto(Item item) {
@@ -383,6 +411,7 @@ public class OrderService {
         dto.setStation3ImagePath(item.getStation3ImagePath());
         dto.setAttentionFlag(item.getAttentionFlag());
         dto.setCriticalFlag(item.getCriticalFlag());
+        dto.setCriticalNotificationSent(item.getCriticalNotificationSent());
         dto.setDefects(List.of());
         return dto;
     }

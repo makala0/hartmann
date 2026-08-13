@@ -101,4 +101,10 @@ public class Item {
     @ColumnDefault("0")
     @Column(name = "critical_flag", nullable = false)
     private Boolean criticalFlag;
+
+    @Setter
+    @NotNull
+    @ColumnDefault("1")
+    @Column(name = "critical_notification_sent", nullable = false)
+    private Boolean criticalNotificationSent = true;
 }

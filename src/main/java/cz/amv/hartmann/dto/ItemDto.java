@@ -26,5 +26,6 @@ public class ItemDto {
     private String station3ImagePath;
     private Boolean attentionFlag;
     private Boolean criticalFlag;
+    private Boolean criticalNotificationSent;
     private List<DefectDto> defects;
 }

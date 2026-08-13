@@ -130,6 +130,16 @@ public class ApiController {
         return ResponseEntity.ok(appUserService.getCriticalNotificationSettings());
     }
 
+    @GetMapping("/critical-notifications/pending")
+    public ResponseEntity<?> getPendingCriticalNotifications() {
+        return ResponseEntity.ok(orderService.findPendingCriticalNotifications());
+    }
+
+    @PostMapping("/critical-notifications/pending/send")
+    public ResponseEntity<?> sendPendingCriticalNotifications(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(orderService.sendPendingCriticalNotifications(userDetails.getUsername()));
+    }
+
     @PutMapping("/critical-notifications")
     public ResponseEntity<?> updateCriticalNotificationSettings(
             @AuthenticationPrincipal UserDetails userDetails,

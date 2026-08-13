@@ -49,6 +49,7 @@ export interface Item {
     station3ImagePath: string;
     attentionFlag: boolean;
     criticalFlag: boolean;
+    criticalNotificationSent: boolean;
     defects?: Defect[];
 }
 
