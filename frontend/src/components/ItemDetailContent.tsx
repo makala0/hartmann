@@ -60,7 +60,7 @@ interface DefectBox {
     height: number;
 }
 
-const DEFECT_MIN_MARKER_SIZE = 44;
+const DEFECT_MIN_MARKER_SIZE = 1;
 const DEFECT_STROKE_COLOR = '#ff1f1f';
 const DEFECT_FILL_COLOR = 'rgba(255, 31, 31, 0.12)';
 
@@ -95,34 +95,19 @@ const normalizeDefectCoordinate = (value: number, max: number): number => {
 };
 
 const normalizeDefectSize = (value: number, max: number): number => {
-    let normalizedSize = value;
+    const normalizedSize = Math.abs(value) <= 1 ? value * max : value;
 
-    if (Math.abs(value) <= 1) {
-        normalizedSize = value * max;
-    } else if (Math.abs(value) <= 100) {
-        normalizedSize = (value / 100) * max;
-    }
-
-    return clamp(Math.max(normalizedSize, DEFECT_MIN_MARKER_SIZE), DEFECT_MIN_MARKER_SIZE, max);
+    return clamp(normalizedSize, DEFECT_MIN_MARKER_SIZE, max);
 };
 
 const drawDefectBox = (context: CanvasRenderingContext2D, box: DefectBox) => {
     context.save();
     context.strokeStyle = DEFECT_STROKE_COLOR;
     context.fillStyle = DEFECT_FILL_COLOR;
-    context.lineWidth = 4;
+    context.lineWidth = Math.max(1, Math.min(4, Math.min(box.width, box.height) / 5));
     context.fillRect(box.left, box.top, box.width, box.height);
     context.strokeRect(box.left, box.top, box.width, box.height);
 
-    const centerX = box.left + (box.width / 2);
-    const centerY = box.top + (box.height / 2);
-    const crossSize = Math.min(12, box.width / 3, box.height / 3);
-    context.beginPath();
-    context.moveTo(centerX - crossSize, centerY);
-    context.lineTo(centerX + crossSize, centerY);
-    context.moveTo(centerX, centerY - crossSize);
-    context.lineTo(centerX, centerY + crossSize);
-    context.stroke();
     context.restore();
 };
 
