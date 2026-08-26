@@ -12,6 +12,7 @@ const ItemsPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [items, setItems] = useState<Item[]>([]);
     const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+    const [navigatingItem, setNavigatingItem] = useState(false);
     const [pagination, setPagination] = useState({
         current: 1,
         pageSize: 10,
@@ -25,19 +26,77 @@ const ItemsPage: React.FC = () => {
     const selectedItemIndex = selectedItem
         ? items.findIndex(item => item.id === selectedItem.id)
         : -1;
-    const hasPreviousItem = selectedItemIndex > 0;
-    const hasNextItem = selectedItemIndex >= 0 && selectedItemIndex < items.length - 1;
+    const hasPreviousItem = selectedItemIndex > 0 || (selectedItemIndex === 0 && currentPage > 1);
+    const hasNextItem = selectedItemIndex >= 0
+        && ((currentPage - 1) * pageSize + selectedItemIndex + 1 < pagination.total);
 
-    const selectAdjacentItem = (direction: -1 | 1) => {
-        if (selectedItemIndex < 0) {
+    const selectAdjacentItem = useCallback(async (direction: -1 | 1) => {
+        if (selectedItemIndex < 0 || navigatingItem) {
             return;
         }
 
         const nextItem = items[selectedItemIndex + direction];
         if (nextItem) {
             setSelectedItem(nextItem);
+            return;
         }
-    };
+
+        const targetPage = currentPage + direction;
+        if (targetPage < 1 || (targetPage - 1) * pageSize >= pagination.total) {
+            return;
+        }
+
+        setNavigatingItem(true);
+        try {
+            const response = await apiClient.get('/dashboard/items', {
+                params: {
+                    ...appliedFilter,
+                    page: targetPage - 1,
+                    size: pageSize,
+                },
+            });
+            const targetItems: Item[] = response.data.content;
+            const targetItem = direction === 1 ? targetItems[0] : targetItems[targetItems.length - 1];
+
+            setItems(targetItems);
+            setPagination(prev => ({
+                ...prev,
+                current: response.data.currentPage + 1,
+                pageSize: response.data.size,
+                total: response.data.totalElements,
+            }));
+            if (targetItem) {
+                setSelectedItem(targetItem);
+            }
+        } catch (error) {
+            console.error('Failed to fetch adjacent item:', error);
+        } finally {
+            setNavigatingItem(false);
+        }
+    }, [appliedFilter, currentPage, items, navigatingItem, pageSize, pagination.total, selectedItemIndex]);
+
+    useEffect(() => {
+        if (!selectedItem) {
+            return;
+        }
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            const target = event.target as HTMLElement | null;
+            if (target?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName || '')) {
+                return;
+            }
+            if (event.key === 'ArrowLeft' && hasPreviousItem) {
+                event.preventDefault();
+                void selectAdjacentItem(-1);
+            } else if (event.key === 'ArrowRight' && hasNextItem) {
+                event.preventDefault();
+                void selectAdjacentItem(1);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [hasNextItem, hasPreviousItem, selectAdjacentItem, selectedItem]);
 
     const fetchItems = useCallback(async () => {
         setLoading(true);
@@ -288,14 +347,14 @@ const ItemsPage: React.FC = () => {
                     <Space>
                         <Button
                             icon={<LeftOutlined />}
-                            disabled={!hasPreviousItem}
+                            disabled={!hasPreviousItem || navigatingItem}
                             onClick={() => selectAdjacentItem(-1)}
                         >
                             {t('common.previous')}
                         </Button>
                         <Button
                             icon={<RightOutlined />}
-                            disabled={!hasNextItem}
+                            disabled={!hasNextItem || navigatingItem}
                             onClick={() => selectAdjacentItem(1)}
                         >
                             {t('common.next')}

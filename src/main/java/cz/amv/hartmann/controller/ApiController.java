@@ -285,6 +285,8 @@ public class ApiController {
             @RequestParam(required = false) LocalDate dateTo,
             @RequestParam(defaultValue = "") String serialNumber,
             @RequestParam(defaultValue = "") String itemId,
+            @RequestParam(required = false) Boolean attentionFlag,
+            @RequestParam(required = false) Boolean criticalFlag,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
@@ -296,6 +298,8 @@ public class ApiController {
         filter.setDateTo(dateTo);
         filter.setSerialNumber(serialNumber);
         filter.setItemId(itemId);
+        filter.setAttentionFlag(attentionFlag);
+        filter.setCriticalFlag(criticalFlag);
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("endInspectionTime").descending());
         Page<Item> itemPage = this.orderService.searchItemsInOrder(id, filter, pageable);
@@ -329,6 +333,8 @@ public class ApiController {
             @RequestParam(required = false) LocalDate dateTo,
             @RequestParam(defaultValue = "") String serialNumber,
             @RequestParam(defaultValue = "") String itemId,
+            @RequestParam(required = false) Boolean attentionFlag,
+            @RequestParam(required = false) Boolean criticalFlag,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
@@ -341,6 +347,8 @@ public class ApiController {
             filter.setDateTo(dateTo);
             filter.setSerialNumber(serialNumber);
             filter.setItemId(itemId);
+            filter.setAttentionFlag(attentionFlag);
+            filter.setCriticalFlag(criticalFlag);
 
             Pageable pageable = PageRequest.of(page, size, Sort.by("endInspectionTime").descending());
             OrderDetailWithItemsDto detail = this.orderService.getOrderDetailWithItems(id, filter, pageable);

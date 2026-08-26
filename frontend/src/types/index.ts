@@ -93,6 +93,8 @@ export interface ItemFilter {
     dateTo?: string;
     serialNumber?: string;
     itemId?: string;
+    attentionFlag?: boolean;
+    criticalFlag?: boolean;
     page?: number;
     size?: number;
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
     Card,
     Table,
@@ -14,6 +14,7 @@ import {
     Progress,
     Tooltip,
     Badge,
+    Checkbox,
     Select,
     Input,
     Drawer,
@@ -33,6 +34,8 @@ import {
     SettingOutlined,
     CameraOutlined,
     SaveOutlined,
+    AlertOutlined,
+    ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -52,6 +55,8 @@ interface ItemFilter {
     cameraNumber?: number;
     serialNumber?: string;
     itemId?: string;
+    attentionFlag?: boolean;
+    criticalFlag?: boolean;
 }
 
 const OrderDetail: React.FC = () => {
@@ -60,6 +65,7 @@ const OrderDetail: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [orderDetail, setOrderDetail] = useState<OrderDetailWithItems | null>(null);
     const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+    const [navigatingItem, setNavigatingItem] = useState(false);
     const [filteredItems, setFilteredItems] = useState<Item[]>([]);
     const [filters, setFilters] = useState<ItemFilter>({});
     const [itemPagination, setItemPagination] = useState({
@@ -77,19 +83,74 @@ const OrderDetail: React.FC = () => {
     const selectedItemIndex = selectedItem
         ? filteredItems.findIndex(item => item.id === selectedItem.id)
         : -1;
-    const hasPreviousItem = selectedItemIndex > 0;
-    const hasNextItem = selectedItemIndex >= 0 && selectedItemIndex < filteredItems.length - 1;
+    const hasPreviousItem = selectedItemIndex > 0 || (selectedItemIndex === 0 && currentPage > 1);
+    const hasNextItem = selectedItemIndex >= 0
+        && ((currentPage - 1) * pageSize + selectedItemIndex + 1 < itemPagination.total);
 
-    const selectAdjacentItem = (direction: -1 | 1) => {
-        if (selectedItemIndex < 0) {
+    const selectAdjacentItem = useCallback(async (direction: -1 | 1) => {
+        if (selectedItemIndex < 0 || navigatingItem || !id) {
             return;
         }
 
         const nextItem = filteredItems[selectedItemIndex + direction];
         if (nextItem) {
             setSelectedItem(nextItem);
+            return;
         }
-    };
+
+        const targetPage = currentPage + direction;
+        if (targetPage < 1 || (targetPage - 1) * pageSize >= itemPagination.total) {
+            return;
+        }
+
+        setNavigatingItem(true);
+        try {
+            const response = await apiClient.get(`/dashboard/orderDetailWithItems/${id}`, {
+                params: { ...filters, page: targetPage - 1, size: pageSize },
+            });
+            const targetItems: Item[] = response.data.items;
+            const targetItem = direction === 1 ? targetItems[0] : targetItems[targetItems.length - 1];
+
+            setOrderDetail(response.data);
+            setFilteredItems(targetItems);
+            setItemPagination(prev => ({
+                ...prev,
+                current: response.data.currentPage + 1,
+                pageSize: response.data.size,
+                total: response.data.totalElements,
+            }));
+            if (targetItem) {
+                setSelectedItem(targetItem);
+            }
+        } catch (error) {
+            console.error('Failed to fetch adjacent item:', error);
+        } finally {
+            setNavigatingItem(false);
+        }
+    }, [currentPage, filteredItems, filters, id, itemPagination.total, navigatingItem, pageSize, selectedItemIndex]);
+
+    useEffect(() => {
+        if (!selectedItem) {
+            return;
+        }
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            const target = event.target as HTMLElement | null;
+            if (target?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName || '')) {
+                return;
+            }
+            if (event.key === 'ArrowLeft' && hasPreviousItem) {
+                event.preventDefault();
+                void selectAdjacentItem(-1);
+            } else if (event.key === 'ArrowRight' && hasNextItem) {
+                event.preventDefault();
+                void selectAdjacentItem(1);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [hasNextItem, hasPreviousItem, selectAdjacentItem, selectedItem]);
 
     useEffect(() => {
         const fetchOrderDetail = async () => {
@@ -299,6 +360,30 @@ const OrderDetail: React.FC = () => {
             onFilter: (value, record) => record.totalResult === value,
         },
         {
+            title: t('field.warning'),
+            dataIndex: 'attentionFlag',
+            key: 'attentionFlag',
+            align: 'center',
+            width: 110,
+            render: (value: boolean) => (
+                <Tag color={value ? 'warning' : 'default'} icon={value ? <ExclamationCircleOutlined /> : undefined}>
+                    {value ? t('common.yes') : t('common.no')}
+                </Tag>
+            ),
+        },
+        {
+            title: t('field.critical'),
+            dataIndex: 'criticalFlag',
+            key: 'criticalFlag',
+            align: 'center',
+            width: 100,
+            render: (value: boolean) => (
+                <Tag color={value ? 'error' : 'default'} icon={value ? <AlertOutlined /> : undefined}>
+                    {value ? t('common.yes') : t('common.no')}
+                </Tag>
+            ),
+        },
+        {
             title: t('common.actions'),
             key: 'action',
             width: 100,
@@ -379,6 +464,36 @@ const OrderDetail: React.FC = () => {
                     onChange={(e) => updateFilters({ defectType: e.target.value })}
                     allowClear
                 />
+            </Col>
+            <Col span={24}>
+                <Text>{t('items.flags')}:</Text>
+                <div
+                    style={{
+                        display: 'flex',
+                        gap: 24,
+                        marginTop: 8,
+                        padding: '8px 12px',
+                        border: '1px solid #d9d9d9',
+                        borderRadius: 8,
+                    }}
+                >
+                    <Checkbox
+                        checked={filters.attentionFlag === true}
+                        onChange={(event) => updateFilters({
+                            attentionFlag: event.target.checked ? true : undefined,
+                        })}
+                    >
+                        <ExclamationCircleOutlined style={{ color: '#d48806' }} /> {t('field.warning')}
+                    </Checkbox>
+                    <Checkbox
+                        checked={filters.criticalFlag === true}
+                        onChange={(event) => updateFilters({
+                            criticalFlag: event.target.checked ? true : undefined,
+                        })}
+                    >
+                        <AlertOutlined style={{ color: '#cf1322' }} /> {t('field.critical')}
+                    </Checkbox>
+                </div>
             </Col>
             <Col span={24}>
                 <Space>
@@ -593,7 +708,7 @@ const OrderDetail: React.FC = () => {
                             }));
                         },
                     }}
-                    scroll={{ x: 1200 }}
+                    scroll={{ x: 1420 }}
                     size="small"
                     rowClassName={(record) =>
                         selectedItem?.id === record.id ? 'ant-table-row-selected' : ''
@@ -608,14 +723,14 @@ const OrderDetail: React.FC = () => {
                     <Space>
                         <Button
                             icon={<LeftOutlined />}
-                            disabled={!hasPreviousItem}
+                            disabled={!hasPreviousItem || navigatingItem}
                             onClick={() => selectAdjacentItem(-1)}
                         >
                             {t('common.previous')}
                         </Button>
                         <Button
                             icon={<RightOutlined />}
-                            disabled={!hasNextItem}
+                            disabled={!hasNextItem || navigatingItem}
                             onClick={() => selectAdjacentItem(1)}
                         >
                             {t('common.next')}
