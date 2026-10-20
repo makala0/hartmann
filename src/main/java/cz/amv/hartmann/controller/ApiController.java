@@ -5,6 +5,9 @@ import cz.amv.hartmann.domain.Order;
 import cz.amv.hartmann.dto.*;
 import cz.amv.hartmann.service.AppUserService;
 import cz.amv.hartmann.service.OrderService;
+import cz.amv.hartmann.service.OrderCsvService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -31,6 +34,16 @@ public class ApiController {
 
     private final AppUserService appUserService;
     private final OrderService orderService;
+    private final OrderCsvService orderCsvService;
+
+    @GetMapping("/dashboard/order/{id}/export.csv")
+    public ResponseEntity<byte[]> exportOrderCsv(@PathVariable Long id) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"zakazka-" + id + ".csv\"")
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .body(orderCsvService.export(id));
+    }
 
     @PostMapping("/auth/register")
     public ResponseEntity<?> register(

@@ -34,6 +34,7 @@ import {
     SettingOutlined,
     CameraOutlined,
     SaveOutlined,
+    DownloadOutlined,
     AlertOutlined,
     ExclamationCircleOutlined,
 } from '@ant-design/icons';
@@ -77,8 +78,32 @@ const OrderDetail: React.FC = () => {
     const [drawerVisible, setDrawerVisible] = useState(false);
     const [commentValue, setCommentValue] = useState('');
     const [savingComment, setSavingComment] = useState(false);
+    const [exportingCsv, setExportingCsv] = useState(false);
     const { current: currentPage, pageSize } = itemPagination;
     const { t } = useLanguage();
+
+    const handleExportCsv = async () => {
+        if (!id) return;
+        setExportingCsv(true);
+        try {
+            const response = await apiClient.get(`/dashboard/order/${id}/export.csv`, {
+                responseType: 'blob',
+            });
+            const url = URL.createObjectURL(response.data);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `zakazka-${id}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            // Give the browser time to begin the download before releasing the blob.
+            window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } catch {
+            message.error(t('order.exportCsvFailed'));
+        } finally {
+            setExportingCsv(false);
+        }
+    };
 
     const selectedItemIndex = selectedItem
         ? filteredItems.findIndex(item => item.id === selectedItem.id)
@@ -539,6 +564,11 @@ const OrderDetail: React.FC = () => {
                 >
                     {t('order.backToDashboard')}
                 </Button>
+                <Tooltip title={t('order.exportCsvHint')}>
+                    <Button icon={<DownloadOutlined />} loading={exportingCsv} onClick={handleExportCsv}>
+                        {t('order.exportCsv')}
+                    </Button>
+                </Tooltip>
                 <Button
                     icon={<FilterOutlined />}
                     onClick={() => setShowFilters(!showFilters)}
