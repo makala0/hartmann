@@ -13,6 +13,8 @@ public interface ItemRepository extends JpaRepository<Item, Long>, JpaSpecificat
 
     List<Item> findByOrderNumber(Long orderNumber);
 
+    List<Item> findByOrderNumberOrderByIdAsc(Long orderNumber);
+
     Optional<Item> findFirstByOrderNumberOrderByEndInspectionTimeDesc(Long orderNumber);
 
     long countByOrderNumber(Long orderNumber);
