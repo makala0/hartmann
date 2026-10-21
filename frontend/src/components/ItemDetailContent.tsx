@@ -18,6 +18,7 @@ import {
 import { AlertOutlined, CameraOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, ToolOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import apiClient from '../api/client';
+import ItemCommentEditor from './ItemCommentEditor';
 import type { Defect, Item } from '../types';
 import { getImageUrl } from '../utils/imageUtils';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -466,6 +467,7 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                             )}
                         </Descriptions.Item>
                     </Descriptions>
+                    <ItemCommentEditor key={item.id} item={item} onItemChange={onItemChange} />
 
                     <Card title={t('itemDetail.checkResults')} size="small">
                         <Row gutter={[16, 16]}>

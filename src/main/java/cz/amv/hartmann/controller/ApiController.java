@@ -237,6 +237,12 @@ public class ApiController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/dashboard/item/{id}/comment")
+    public ResponseEntity<ItemDto> updateItemComment(
+            @PathVariable Long id, @Valid @RequestBody ItemCommentForm form) {
+        return ResponseEntity.ok(orderService.updateItemComment(id, form.getComment()));
+    }
+
     @PutMapping("/dashboard/item/{id}/flags")
     public ResponseEntity<?> updateItemFlags(
             @PathVariable Long id,

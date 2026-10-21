@@ -30,6 +30,7 @@ export interface Defect {
 }
 
 export interface Item {
+    comment?: string | null;
     id: number;
     itemId: string;
     serialNumber: string;
