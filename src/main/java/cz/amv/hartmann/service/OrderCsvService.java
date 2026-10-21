@@ -26,7 +26,7 @@ public class OrderCsvService {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Zakázka nenalezena"));
         // Match the order-detail association; do not apply table filters or pagination.
-        List<Item> items = itemRepository.findByOrderNumberOrderByIdAsc(order.getOrderNumber());
+        List<Item> items = itemRepository.findByOrderIdOrderByIdAsc(order.getOrderId());
         StringBuilder csv = new StringBuilder("\uFEFF");
         row(csv, "ID zakázky", "Číslo zakázky", "SKU zakázky", "Ref zakázky", "Typ linky",
                 "Receptura", "Zahájení zakázky (UTC)", "Komentář zakázky", "Item ID", "Sériové číslo",

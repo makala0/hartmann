@@ -11,34 +11,34 @@ import java.util.Optional;
 
 public interface ItemRepository extends JpaRepository<Item, Long>, JpaSpecificationExecutor<Item> {
 
-    List<Item> findByOrderNumber(Long orderNumber);
+    List<Item> findByOrderId(Long orderId);
 
-    List<Item> findByOrderNumberOrderByIdAsc(Long orderNumber);
+    List<Item> findByOrderIdOrderByIdAsc(Long orderId);
 
-    Optional<Item> findFirstByOrderNumberOrderByEndInspectionTimeDesc(Long orderNumber);
+    Optional<Item> findFirstByOrderIdOrderByEndInspectionTimeDescIdDesc(Long orderId);
 
-    long countByOrderNumber(Long orderNumber);
+    long countByOrderId(Long orderId);
 
-    long countByOrderNumberAndTotalResultIgnoreCase(Long orderNumber, String totalResult);
+    long countByOrderIdAndTotalResultIgnoreCase(Long orderId, String totalResult);
 
     List<Item> findByCriticalFlagTrueAndCriticalNotificationSentFalse();
 
     List<Item> findByAttentionFlagTrueAndWarningNotificationSentFalse();
 
     @Query("""
-            SELECT i.orderNumber AS orderNumber,
+            SELECT i.orderId AS orderId,
                    SUM(CASE WHEN UPPER(i.totalResult) = 'OK' THEN 1L ELSE 0L END) AS okCount,
                    SUM(CASE WHEN UPPER(i.totalResult) = 'NOK' THEN 1L ELSE 0L END) AS nokCount,
                    SUM(CASE WHEN UPPER(i.totalResult) = 'REWORK' THEN 1L ELSE 0L END) AS reworkCount,
                    COUNT(i) AS totalCount
             FROM Item i
-            WHERE i.orderNumber IN :orderNumbers
-            GROUP BY i.orderNumber
+            WHERE i.orderId IN :orderIds
+            GROUP BY i.orderId
             """)
-    List<ItemResultStats> getResultStatsByOrderNumbers(@Param("orderNumbers") List<Long> orderNumbers);
+    List<ItemResultStats> getResultStatsByOrderIds(@Param("orderIds") List<Long> orderIds);
 
     interface ItemResultStats {
-        Long getOrderNumber();
+        Long getOrderId();
         Long getOkCount();
         Long getNokCount();
         Long getReworkCount();

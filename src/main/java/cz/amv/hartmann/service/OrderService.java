@@ -44,10 +44,10 @@ public class OrderService {
 
     public Map<String, Object> getDashboardStats(List<Order> filteredOrders, long totalRecipes) {
         List<ItemRepository.ItemResultStats> itemStats = getItemStatsForOrders(filteredOrders);
-        Map<Long, ItemRepository.ItemResultStats> itemStatsByOrderNumber = itemStats.stream()
-                .collect(Collectors.toMap(ItemRepository.ItemResultStats::getOrderNumber, stats -> stats));
+        Map<Long, ItemRepository.ItemResultStats> itemStatsByOrderId = itemStats.stream()
+                .collect(Collectors.toMap(ItemRepository.ItemResultStats::getOrderId, stats -> stats));
 
-        applyStatValues(filteredOrders, itemStatsByOrderNumber);
+        applyStatValues(filteredOrders, itemStatsByOrderId);
 
         long totalOkCount = itemStats.stream()
                 .mapToLong(ItemRepository.ItemResultStats::getOkCount)
@@ -66,23 +66,23 @@ public class OrderService {
     }
 
     private List<ItemRepository.ItemResultStats> getItemStatsForOrders(List<Order> orders) {
-        List<Long> orderNumbers = orders.stream()
-                .map(Order::getOrderNumber)
+        List<Long> orderIds = orders.stream()
+                .map(Order::getOrderId)
                 .toList();
 
-        if (orderNumbers.isEmpty()) {
+        if (orderIds.isEmpty()) {
             return List.of();
         }
 
-        return this.itemRepository.getResultStatsByOrderNumbers(orderNumbers);
+        return this.itemRepository.getResultStatsByOrderIds(orderIds);
     }
 
     private void applyStatValues(
             List<Order> orders,
-            Map<Long, ItemRepository.ItemResultStats> itemStatsByOrderNumber
+            Map<Long, ItemRepository.ItemResultStats> itemStatsByOrderId
     ) {
         for (Order order : orders) {
-            ItemRepository.ItemResultStats itemStats = itemStatsByOrderNumber.get(order.getOrderNumber());
+            ItemRepository.ItemResultStats itemStats = itemStatsByOrderId.get(order.getOrderId());
             long totalOkCount = itemStats != null ? itemStats.getOkCount() : 0L;
             long totalNokCount = itemStats != null ? itemStats.getNokCount() : 0L;
             long totalReworkCount = itemStats != null ? itemStats.getReworkCount() : 0L;
@@ -162,11 +162,11 @@ public class OrderService {
         };
     }
 
-    public Map<String, Object> findScannedItem(Long orderNumber) {
-        Order order = orderRepository.findFirstByOrderNumber(orderNumber)
-                .orElseThrow(() -> new RuntimeException("Objednávka nenalezena pro kód: " + orderNumber));
-        Item item = itemRepository.findFirstByOrderNumberOrderByEndInspectionTimeDesc(orderNumber)
-                .orElseThrow(() -> new RuntimeException("Kus nenalezen pro kód: " + orderNumber));
+    public Map<String, Object> findScannedItem(Long orderId) {
+        Order order = orderRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new RuntimeException("Objednávka nenalezena pro kód: " + orderId));
+        Item item = itemRepository.findFirstByOrderIdOrderByEndInspectionTimeDescIdDesc(orderId)
+                .orElseThrow(() -> new RuntimeException("Kus nenalezen pro kód: " + orderId));
 
         Map<String, Object> result = new HashMap<>();
         result.put("orderId", order.getId());
@@ -178,7 +178,7 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Objednávka nenalezena: " + orderId));
 
-        List<Item> items = itemRepository.findByOrderNumber(order.getOrderNumber());
+        List<Item> items = itemRepository.findByOrderId(order.getOrderId());
 
         // Výpočet souhrných statistik
         long okCount = items.stream()
@@ -219,15 +219,15 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Objednávka nenalezena: " + orderId));
 
-        return itemRepository.findAll(toItemSpecification(order.getOrderNumber(), filter), pageable);
+        return itemRepository.findAll(toItemSpecification(order.getOrderId(), filter), pageable);
     }
 
-    private Specification<Item> toItemSpecification(Long orderNumber, ItemFilter filter) {
+    private Specification<Item> toItemSpecification(Long orderId, ItemFilter filter) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            if (orderNumber != null) {
-                predicates.add(cb.equal(root.get("orderNumber"), orderNumber));
+            if (orderId != null) {
+                predicates.add(cb.equal(root.get("orderId"), orderId));
             }
 
             if (filter.getOrderId() != null && filter.getOrderId() != 0L) {
@@ -293,11 +293,11 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Objednávka nenalezena: " + orderId));
 
-        long okCount = itemRepository.countByOrderNumberAndTotalResultIgnoreCase(order.getOrderNumber(), "OK");
-        long nokCount = itemRepository.countByOrderNumberAndTotalResultIgnoreCase(order.getOrderNumber(), "NOK");
-        long reworkCount = itemRepository.countByOrderNumberAndTotalResultIgnoreCase(order.getOrderNumber(), "REWORK");
-        long totalCount = itemRepository.countByOrderNumber(order.getOrderNumber());
-        Page<Item> itemPage = itemRepository.findAll(toItemSpecification(order.getOrderNumber(), filter), pageable);
+        long okCount = itemRepository.countByOrderIdAndTotalResultIgnoreCase(order.getOrderId(), "OK");
+        long nokCount = itemRepository.countByOrderIdAndTotalResultIgnoreCase(order.getOrderId(), "NOK");
+        long reworkCount = itemRepository.countByOrderIdAndTotalResultIgnoreCase(order.getOrderId(), "REWORK");
+        long totalCount = itemRepository.countByOrderId(order.getOrderId());
+        Page<Item> itemPage = itemRepository.findAll(toItemSpecification(order.getOrderId(), filter), pageable);
 
         OrderDetailWithItemsDto result = new OrderDetailWithItemsDto();
         result.setId(order.getId());

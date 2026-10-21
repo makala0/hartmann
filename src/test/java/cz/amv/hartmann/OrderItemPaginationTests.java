@@ -27,6 +27,7 @@ class OrderItemPaginationTests {
     @Autowired MockMvc mvc;
     @Autowired OrderRepository orders;
     @Autowired ItemRepository items;
+    @Autowired cz.amv.hartmann.service.OrderService orderService;
 
     @Test
     @WithMockUser
@@ -64,6 +65,64 @@ class OrderItemPaginationTests {
                 .andExpect(jsonPath("$.totalElements").value(50));
     }
 
+    @Test
+    @WithMockUser
+    void sameOrderNumberDoesNotMixItemsCountsCsvOrScans() throws Exception {
+        Order first = createOrder(123L);
+        Order second = createOrder(999L);
+        second.setOrderNumber(first.getOrderNumber());
+        orders.saveAndFlush(second);
+        Order empty = createOrder(555L);
+        empty.setOrderNumber(first.getOrderNumber());
+        orders.saveAndFlush(empty);
+        createItem(123L, first.getOrderId(), "first-ok", "OK");
+        createItem(123L, first.getOrderId(), "first-nok", "NOK");
+        createItem(123L, second.getOrderId(), "second-rework", "REWORK");
+
+        mvc.perform(get("/api/dashboard/orderDetailWithItems/{id}", first.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalCount").value(2))
+                .andExpect(jsonPath("$.okCount").value(1))
+                .andExpect(jsonPath("$.nokCount").value(1))
+                .andExpect(jsonPath("$.reworkCount").value(0))
+                .andExpect(jsonPath("$.items[*].orderId", org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is(first.getOrderId().intValue()))));
+        mvc.perform(get("/api/dashboard/orderDetailWithItems/{id}", second.getId())
+                        .param("totalResult", "NOK"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(0))
+                .andExpect(jsonPath("$.totalCount").value(1))
+                .andExpect(jsonPath("$.reworkCount").value(1));
+        mvc.perform(get("/api/dashboard/orderDetailWithItems/{id}", empty.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(0))
+                .andExpect(jsonPath("$.totalCount").value(0));
+        mvc.perform(get("/api/dashboard/order/{id}", first.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(2));
+        assertThat(orderService.searchItemsInOrder(second.getId(), new cz.amv.hartmann.dto.ItemFilter(),
+                org.springframework.data.domain.PageRequest.of(0, 20)).getContent())
+                .extracting(Item::getItemId).containsExactly("second-rework");
+        String csv = mvc.perform(get("/api/dashboard/order/{id}/export.csv", second.getId()))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(csv).contains("second-rework").doesNotContain("first-ok", "first-nok");
+        String emptyCsv = mvc.perform(get("/api/dashboard/order/{id}/export.csv", empty.getId()))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(emptyCsv).doesNotContain("first-ok", "first-nok", "second-rework");
+        mvc.perform(get("/api/dashboard/scan/{orderId}", first.getOrderId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.item.itemId").value("first-nok"));
+        mvc.perform(get("/api/dashboard/scan/{orderId}", second.getOrderId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.item.itemId").value("second-rework"));
+        var stats = orderService.getDashboardStats(java.util.List.of(first, second, empty), 3);
+        assertThat(stats.get("okCount")).isEqualTo(1L);
+        assertThat(stats.get("nokCount")).isEqualTo(1L);
+        assertThat(first.getTotalCount()).isEqualTo(2L);
+        assertThat(second.getTotalCount()).isEqualTo(1L);
+        assertThat(empty.getTotalCount()).isZero();
+    }
+
     private Order createOrder(long number) {
         Order order = new Order();
         order.setOrderId(number + 1000);
@@ -76,6 +135,10 @@ class OrderItemPaginationTests {
     }
 
     private void createItem(long number, String itemId, String result) {
+        createItem(number, number + 1000, itemId, result);
+    }
+
+    private void createItem(long number, long orderId, String itemId, String result) {
         Item item = new Item();
         ReflectionTestUtils.setField(item, "itemId", itemId);
         ReflectionTestUtils.setField(item, "serialNumber", "=1+1");
@@ -83,7 +146,7 @@ class OrderItemPaginationTests {
         ReflectionTestUtils.setField(item, "sku", "SKU");
         ReflectionTestUtils.setField(item, "ref", "REF");
         ReflectionTestUtils.setField(item, "orderNumber", number);
-        ReflectionTestUtils.setField(item, "orderId", number + 1000);
+        ReflectionTestUtils.setField(item, "orderId", orderId);
         ReflectionTestUtils.setField(item, "cameraNumber", (short) 1);
         ReflectionTestUtils.setField(item, "defectType", "");
         ReflectionTestUtils.setField(item, "totalResult", result);

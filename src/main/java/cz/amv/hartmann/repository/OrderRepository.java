@@ -8,5 +8,5 @@ import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecificationExecutor<Order> {
 
-    Optional<Order> findFirstByOrderNumber(Long orderNumber);
+    Optional<Order> findByOrderId(Long orderId);
 }
