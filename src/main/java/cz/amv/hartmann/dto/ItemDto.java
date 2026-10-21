@@ -7,6 +7,7 @@ import java.util.List;
 
 @Data
 public class ItemDto {
+    private String comment;
     private Long id;
     private String itemId;
     private String serialNumber;

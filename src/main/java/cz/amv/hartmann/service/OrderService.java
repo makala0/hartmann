@@ -14,6 +14,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
@@ -411,6 +413,7 @@ public class OrderService {
 
     private ItemDto convertToDto(Item item) {
         ItemDto dto = new ItemDto();
+        dto.setComment(item.getComment());
         dto.setId(item.getId());
         dto.setItemId(item.getItemId());
         dto.setSerialNumber(item.getSerialNumber());
@@ -434,6 +437,15 @@ public class OrderService {
         dto.setWarningNotificationSent(item.getWarningNotificationSent());
         dto.setDefects(List.of());
         return dto;
+    }
+
+    @Transactional
+    public ItemDto updateItemComment(Long id, String comment) {
+        Item item = itemRepository.findById(id).orElseThrow(() ->
+                new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Kus nenalezen"));
+        item.setComment(comment);
+        return convertToDtoWithDefects(itemRepository.saveAndFlush(item));
     }
 
     private ItemDto convertToDtoWithDefects(Item item) {

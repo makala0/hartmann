@@ -13,6 +13,11 @@ import java.time.Instant;
 @Table(name = "item")
 @Getter
 public class Item {
+    @Setter
+    @Size(max = 4000)
+    @Column(name = "item_comment", length = 4000)
+    private String comment;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
