@@ -31,6 +31,7 @@ import {
     EyeOutlined,
     ReloadOutlined,
     FilterOutlined,
+    SearchOutlined,
     SettingOutlined,
     CameraOutlined,
     SaveOutlined,
@@ -69,6 +70,7 @@ const OrderDetail: React.FC = () => {
     const [navigatingItem, setNavigatingItem] = useState(false);
     const [filteredItems, setFilteredItems] = useState<Item[]>([]);
     const [filters, setFilters] = useState<ItemFilter>({});
+    const [draftFilters, setDraftFilters] = useState<ItemFilter>({});
     const [itemPagination, setItemPagination] = useState({
         current: 1,
         pageSize: 20,
@@ -238,11 +240,22 @@ const OrderDetail: React.FC = () => {
 
     const updateFilters = (newFilters: Partial<ItemFilter>) => {
         setFilters(prev => ({ ...prev, ...newFilters }));
+        setDraftFilters(prev => ({ ...prev, ...newFilters }));
+        setItemPagination(prev => ({ ...prev, current: 1 }));
+    };
+
+    const updateDraftFilters = (newFilters: Partial<ItemFilter>) => {
+        setDraftFilters(prev => ({ ...prev, ...newFilters }));
+    };
+
+    const applyFilters = () => {
+        setFilters({ ...draftFilters });
         setItemPagination(prev => ({ ...prev, current: 1 }));
     };
 
     const clearFilters = () => {
         setFilters({});
+        setDraftFilters({});
         setItemPagination(prev => ({ ...prev, current: 1 }));
         setShowFilters(false);
     };
@@ -444,8 +457,8 @@ const OrderDetail: React.FC = () => {
                 <Select
                     placeholder={t('placeholder.allResults')}
                     style={{ width: '100%' }}
-                    value={filters.totalResult}
-                    onChange={(value) => updateFilters({ totalResult: value })}
+                    value={draftFilters.totalResult}
+                    onChange={(value) => updateDraftFilters({ totalResult: value })}
                     allowClear
                 >
                     <Option value="OK">OK</Option>
@@ -458,8 +471,8 @@ const OrderDetail: React.FC = () => {
                 <Select
                     placeholder={t('placeholder.allCameras')}
                     style={{ width: '100%' }}
-                    value={filters.cameraNumber}
-                    onChange={(value) => updateFilters({ cameraNumber: value })}
+                    value={draftFilters.cameraNumber}
+                    onChange={(value) => updateDraftFilters({ cameraNumber: value })}
                     allowClear
                 >
                     {[1, 2, 3, 4, 5].map(num => (
@@ -471,8 +484,8 @@ const OrderDetail: React.FC = () => {
                 <Text>{t('field.itemId')}:</Text>
                 <Input
                     placeholder={t('placeholder.searchItemId')}
-                    value={filters.itemId}
-                    onChange={(e) => updateFilters({ itemId: e.target.value })}
+                    value={draftFilters.itemId}
+                    onChange={(e) => updateDraftFilters({ itemId: e.target.value })}
                     allowClear
                 />
             </Col>
@@ -480,8 +493,8 @@ const OrderDetail: React.FC = () => {
                 <Text>{t('field.serialNumber')}:</Text>
                 <Input
                     placeholder={t('placeholder.searchSerial')}
-                    value={filters.serialNumber}
-                    onChange={(e) => updateFilters({ serialNumber: e.target.value })}
+                    value={draftFilters.serialNumber}
+                    onChange={(e) => updateDraftFilters({ serialNumber: e.target.value })}
                     allowClear
                 />
             </Col>
@@ -489,8 +502,8 @@ const OrderDetail: React.FC = () => {
                 <Text>Typ vady:</Text>
                 <Input
                     placeholder="Hledat podle typu vady"
-                    value={filters.defectType}
-                    onChange={(e) => updateFilters({ defectType: e.target.value })}
+                    value={draftFilters.defectType}
+                    onChange={(e) => updateDraftFilters({ defectType: e.target.value })}
                     allowClear
                 />
             </Col>
@@ -507,16 +520,16 @@ const OrderDetail: React.FC = () => {
                     }}
                 >
                     <Checkbox
-                        checked={filters.attentionFlag === true}
-                        onChange={(event) => updateFilters({
+                        checked={draftFilters.attentionFlag === true}
+                        onChange={(event) => updateDraftFilters({
                             attentionFlag: event.target.checked ? true : undefined,
                         })}
                     >
                         <ExclamationCircleOutlined style={{ color: '#d48806' }} /> {t('field.warning')}
                     </Checkbox>
                     <Checkbox
-                        checked={filters.criticalFlag === true}
-                        onChange={(event) => updateFilters({
+                        checked={draftFilters.criticalFlag === true}
+                        onChange={(event) => updateDraftFilters({
                             criticalFlag: event.target.checked ? true : undefined,
                         })}
                     >
@@ -526,6 +539,9 @@ const OrderDetail: React.FC = () => {
             </Col>
             <Col span={24}>
                 <Space>
+                    <Button type="primary" onClick={applyFilters} icon={<SearchOutlined />}>
+                        {t('order.applyFilters')}
+                    </Button>
                     <Button onClick={clearFilters} icon={<ReloadOutlined />}>
                         {t('order.clearFilters')}
                     </Button>

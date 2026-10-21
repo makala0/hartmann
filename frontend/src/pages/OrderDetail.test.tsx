@@ -16,7 +16,9 @@ jest.mock('antd', () => {
     const Box = ({ children }: any) => <div>{children}</div>;
     const Button = ({ children, onClick }: any) => <button onClick={onClick}>{children}</button>;
     const TextArea = ({ value, onChange }: any) => <textarea value={value} onChange={onChange} />;
-    const Input = Object.assign(() => null, { TextArea });
+    const Input = Object.assign(({ value, onChange, placeholder }: any) => (
+        <input value={value || ''} onChange={onChange} placeholder={placeholder} />
+    ), { TextArea });
     const Select = Object.assign(() => null, { Option: Box });
     return {
         Card: Box, Row: Box, Col: Box, Space: Box, Tag: Box, Tooltip: Box,
@@ -101,4 +103,38 @@ test('saving a comment does not replace the filtered page with the comment respo
     expect(screen.getByTestId('result-filter')).toHaveTextContent('["NOK"]');
     expect(screen.getByTestId('items')).toHaveTextContent('page-1');
     expect(screen.getByTestId('items')).not.toHaveTextContent('unfiltered-item');
+});
+
+
+test('panel edits are applied together only on confirmation and drafts do not affect pagination', async () => {
+    render(<OrderDetail />);
+    await screen.findByText('NOK filter');
+    fireEvent.click(screen.getByText('Next page'));
+    await waitFor(() => expect(screen.getByTestId('page')).toHaveTextContent('2'));
+    fireEvent.click(screen.getByText('common.filters'));
+    const requestsBeforeEditing = (apiClient.get as jest.Mock).mock.calls.length;
+    fireEvent.change(screen.getByPlaceholderText('placeholder.searchItemId'), { target: { value: 'kus' } });
+    fireEvent.change(screen.getByPlaceholderText('placeholder.searchSerial'), { target: { value: '123' } });
+    expect(apiClient.get).toHaveBeenCalledTimes(requestsBeforeEditing);
+    expect(screen.getByTestId('page')).toHaveTextContent('2');
+    fireEvent.click(screen.getByText('order.applyFilters'));
+    await waitFor(() => expect(screen.getByTestId('page')).toHaveTextContent('1'));
+    expect(apiClient.get).toHaveBeenLastCalledWith('/dashboard/orderDetailWithItems/123', {
+        params: { itemId: 'kus', serialNumber: '123', page: 0, size: 20 },
+    });
+    fireEvent.change(screen.getByPlaceholderText('placeholder.searchSerial'), { target: { value: '456' } });
+    fireEvent.click(screen.getByText('Next page'));
+    await waitFor(() => expect(screen.getByTestId('page')).toHaveTextContent('2'));
+    expect(apiClient.get).toHaveBeenLastCalledWith('/dashboard/orderDetailWithItems/123', {
+        params: { itemId: 'kus', serialNumber: '123', page: 1, size: 20 },
+    });
+    expect(screen.getByPlaceholderText('placeholder.searchSerial')).toHaveValue('456');
+    fireEvent.click(screen.getByText('order.clearFilters'));
+    await waitFor(() => expect(screen.getByTestId('page')).toHaveTextContent('1'));
+    expect(apiClient.get).toHaveBeenLastCalledWith('/dashboard/orderDetailWithItems/123', {
+        params: { page: 0, size: 20 },
+    });
+    fireEvent.click(screen.getByText('common.filters'));
+    expect(screen.getByPlaceholderText('placeholder.searchItemId')).toHaveValue('');
+    expect(screen.getByPlaceholderText('placeholder.searchSerial')).toHaveValue('');
 });

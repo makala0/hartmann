@@ -8,6 +8,7 @@ export type TranslationKey = string;
 
 const translations: Record<Language, Record<TranslationKey, string>> = {
     cs: {
+        'order.applyFilters': 'Aplikovat filtr',
         'order.exportCsv': 'Exportovat CSV',
         'order.exportCsvHint': 'Exportovat zakázku se všemi kusy bez ohledu na filtry',
         'order.exportCsvFailed': 'Export zakázky do CSV se nepodařil',
@@ -28,6 +29,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
         'itemDetail.imageUnavailable': 'Obrázek není dostupný', 'itemDetail.flagSaved': 'Označení kusu bylo uloženo', 'itemDetail.flagSaveFailed': 'Označení kusu se nepodařilo uložit', 'itemDetail.flagsTitle': 'Označení kusu', 'itemDetail.flagsExtra': 'Ruční priorita kontroly', 'itemDetail.warningDescription': 'Vyžaduje zvýšenou pozornost', 'itemDetail.criticalDescription': 'Kritický kus k prioritnímu řešení', 'itemDetail.confirmCriticalTitle': 'Opravdu označit kus jako kritický?', 'itemDetail.confirmCriticalContent': 'Po zaškrtnutí pole Kritická se ihned odešle e-mail vybraným adresátům.', 'itemDetail.confirmCriticalOk': 'Ano, označit a odeslat e-mail', 'itemDetail.pendingCriticalTitle': 'Čeká na odeslání e-mailu', 'itemDetail.pendingCriticalOnlineDescription': 'Kus je označen jako kritický, ale e-mail se zatím nepodařilo odeslat. Zkontrolujte připojení k internetu a zkuste odeslat čekající upozornění.', 'itemDetail.pendingCriticalOfflineDescription': 'Jste offline. E-mail se odešle až po obnovení připojení k internetu.', 'itemDetail.sendPendingCritical': 'Odeslat čekající upozornění', 'itemDetail.pendingCriticalSent': 'Čekající kritická upozornění byla odeslána', 'itemDetail.pendingCriticalStillPending': 'E-mail se nepodařilo odeslat. Zkontrolujte připojení k internetu a SMTP server a zkuste to znovu.', 'itemDetail.pendingCriticalSendFailed': 'Odeslání čekajících kritických upozornění selhalo', 'itemDetail.basicInfo': 'Základní informace', 'itemDetail.checkResults': 'Výsledky kontrol', 'itemDetail.station': 'Stanice', 'itemDetail.stationImages': 'Obrázky ze stanic',
     },
     en: {
+        'order.applyFilters': 'Apply filters',
         'order.exportCsv': 'Export CSV',
         'order.exportCsvHint': 'Export the order with all items regardless of filters',
         'order.exportCsvFailed': 'Could not export the order to CSV',
