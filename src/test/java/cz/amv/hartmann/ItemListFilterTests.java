@@ -31,6 +31,18 @@ class ItemListFilterTests {
     @Test
     @WithMockUser
     void combinesAllFiltersBeforePagingAndSupportsEachNewFilter() throws Exception {
+        assertCombinedFiltersAndPaging();
+    }
+
+    @Test
+    @WithMockUser
+    void combinesFiltersWhenUnrelatedItemsAlreadyExist() throws Exception {
+        for (int i = 0; i < 18; i++) createItem(777L, "existing-" + i, "OK");
+        assertCombinedFiltersAndPaging();
+    }
+
+    private void assertCombinedFiltersAndPaging() throws Exception {
+        long initialItemCount = items.count();
         for (int i = 0; i < 50; i++) createItem(123L, "kus-" + i, i % 2 == 0 ? "NOK" : "OK");
         for (Item item : items.findByOrderId(1123L)) {
             ReflectionTestUtils.setField(item, "defectType", "Scratch");
@@ -74,7 +86,8 @@ class ItemListFilterTests {
             params.set(field, value);
         }
         mvc.perform(get("/api/dashboard/items"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(51));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(initialItemCount + 51));
     }
 
     private Order createOrder(long number) {
