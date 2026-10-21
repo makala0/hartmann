@@ -42,6 +42,8 @@ class ItemListFilterTests {
         var params = new org.springframework.util.LinkedMultiValueMap<String, String>();
         params.add("orderId", "1123");
         params.add("totalResult", "nok");
+        params.add("sku", "sk");
+        params.add("ref", "re");
         params.add("cameraNumber", "1");
         params.add("itemId", "KUS-");
         params.add("serialNumber", "=1+");
@@ -63,7 +65,7 @@ class ItemListFilterTests {
                 .andExpect(jsonPath("$.content.length()").value(5))
                 .andExpect(jsonPath("$.content[0].itemId").value("kus-8"));
         params.set("page", "0");
-        for (String field : java.util.List.of("totalResult", "cameraNumber", "itemId", "serialNumber", "defectType")) {
+        for (String field : java.util.List.of("totalResult", "cameraNumber", "itemId", "serialNumber", "defectType", "sku", "ref")) {
             String value = params.getFirst(field);
             params.set(field, field.equals("cameraNumber") ? "2" : "missing");
             mvc.perform(get("/api/dashboard/items").params(params))

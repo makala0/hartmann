@@ -39,6 +39,8 @@ test('applies all drafted filters together and retains them across pages until r
     fireEvent.click(screen.getByText('Next page'));
     await waitFor(() => expect(apiClient.get).toHaveBeenCalledTimes(2));
     const count = (apiClient.get as jest.Mock).mock.calls.length;
+    fireEvent.change(screen.getByLabelText('SKU:'), { target: { value: 'sku' } });
+    fireEvent.change(screen.getByLabelText('REF:'), { target: { value: 'ref' } });
     fireEvent.change(screen.getByLabelText('field.result:'), { target: { value: 'NOK' } });
     fireEvent.change(screen.getByLabelText('field.camera:'), { target: { value: '2' } });
     fireEvent.change(screen.getByLabelText('field.itemId:'), { target: { value: 'kus' } });
@@ -49,7 +51,7 @@ test('applies all drafted filters together and retains them across pages until r
     fireEvent.click(screen.getByLabelText('field.critical'));
     expect(apiClient.get).toHaveBeenCalledTimes(count);
     fireEvent.click(screen.getByText('order.applyFilters'));
-    const filters = { totalResult: 'NOK', cameraNumber: 2, itemId: 'kus', serialNumber: 'SN',
+    const filters = { sku: 'sku', ref: 'ref', totalResult: 'NOK', cameraNumber: 2, itemId: 'kus', serialNumber: 'SN',
         defectType: 'scratch', orderId: 123, attentionFlag: true, criticalFlag: true };
     await waitFor(() => expect(apiClient.get).toHaveBeenLastCalledWith('/dashboard/items', {
         params: { ...filters, page: 0, size: 10 },
@@ -67,6 +69,8 @@ test('applies all drafted filters together and retains them across pages until r
     await waitFor(() => expect(apiClient.get).toHaveBeenLastCalledWith('/dashboard/items', {
         params: { page: 0, size: 20 },
     }));
+    expect(screen.getByLabelText('SKU:')).toHaveValue('');
+    expect(screen.getByLabelText('REF:')).toHaveValue('');
     expect(screen.getByLabelText('field.itemId:')).toHaveValue('');
     expect(screen.getByLabelText('field.result:')).toHaveValue('');
 });
