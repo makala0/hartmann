@@ -363,7 +363,8 @@ public class ApiController {
             filter.setAttentionFlag(attentionFlag);
             filter.setCriticalFlag(criticalFlag);
 
-            Pageable pageable = PageRequest.of(page, size, Sort.by("endInspectionTime").descending());
+            Pageable pageable = PageRequest.of(page, size, Sort.by("endInspectionTime").descending()
+                    .and(Sort.by("id").descending()));
             OrderDetailWithItemsDto detail = this.orderService.getOrderDetailWithItems(id, filter, pageable);
             return ResponseEntity.ok(detail);
         } catch (Exception e) {

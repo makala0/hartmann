@@ -178,6 +178,7 @@ const OrderDetail: React.FC = () => {
     }, [hasNextItem, hasPreviousItem, selectAdjacentItem, selectedItem]);
 
     useEffect(() => {
+        let cancelled = false;
         const fetchOrderDetail = async () => {
             setLoading(true);
             try {
@@ -188,6 +189,7 @@ const OrderDetail: React.FC = () => {
                         size: pageSize,
                     },
                 });
+                if (cancelled) return;
                 setOrderDetail(response.data);
                 setFilteredItems(response.data.items);
                 setItemPagination(prev => ({
@@ -200,11 +202,12 @@ const OrderDetail: React.FC = () => {
             } catch (error) {
                 console.error('Failed to fetch order detail:', error);
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         };
 
         fetchOrderDetail();
+        return () => { cancelled = true; };
     }, [id, filters, currentPage, pageSize]);
 
     const getStatusColor = (status: string) => {
@@ -252,8 +255,8 @@ const OrderDetail: React.FC = () => {
             const response = await apiClient.put(`/dashboard/order/${id}/comment`, {
                 comment: commentValue,
             });
-            setOrderDetail(response.data);
-            setFilteredItems(response.data.items);
+            // The comment endpoint returns an unfiltered page; retain the active item query.
+            setOrderDetail(prev => prev ? { ...prev, comment: response.data.comment } : prev);
             setCommentValue(response.data.comment || '');
             message.success(t('order.commentSaved'));
         } catch (error) {
@@ -382,7 +385,8 @@ const OrderDetail: React.FC = () => {
                 { text: 'NOK', value: 'NOK' },
                 { text: 'REWORK', value: 'REWORK' },
             ],
-            onFilter: (value, record) => record.totalResult === value,
+            filterMultiple: false,
+            filteredValue: filters.totalResult ? [filters.totalResult] : null,
         },
         {
             title: t('field.warning'),
@@ -721,6 +725,11 @@ const OrderDetail: React.FC = () => {
                     columns={columns}
                     dataSource={filteredItems}
                     rowKey="id"
+                    onChange={(_, tableFilters, __, extra) => {
+                        if (extra.action === 'filter') {
+                            updateFilters({ totalResult: tableFilters.totalResult?.[0] as string | undefined });
+                        }
+                    }}
                     pagination={{
                         current: itemPagination.current,
                         pageSize: itemPagination.pageSize,
@@ -733,7 +742,7 @@ const OrderDetail: React.FC = () => {
                         onChange: (page, pageSize) => {
                             setItemPagination(prev => ({
                                 ...prev,
-                                current: page,
+                                current: pageSize !== prev.pageSize ? 1 : page,
                                 pageSize: pageSize || prev.pageSize,
                             }));
                         },
