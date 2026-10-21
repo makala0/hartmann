@@ -217,6 +217,8 @@ public class ApiController {
             @RequestParam(defaultValue = "") String totalResult,
             @RequestParam(required = false) Integer cameraNumber,
             @RequestParam(defaultValue = "") String itemId,
+            @RequestParam(defaultValue = "") String sku,
+            @RequestParam(defaultValue = "") String ref,
             @RequestParam(defaultValue = "") String serialNumber,
             @RequestParam(defaultValue = "") String defectType,
             @RequestParam(required = false) Boolean attentionFlag,
@@ -229,6 +231,8 @@ public class ApiController {
         filter.setTotalResult(totalResult);
         filter.setCameraNumber(cameraNumber);
         filter.setItemId(itemId);
+        filter.setSku(sku);
+        filter.setRef(ref);
         filter.setSerialNumber(serialNumber);
         filter.setDefectType(defectType);
         filter.setAttentionFlag(attentionFlag);
@@ -315,6 +319,8 @@ public class ApiController {
             @RequestParam(required = false) LocalDate dateTo,
             @RequestParam(defaultValue = "") String serialNumber,
             @RequestParam(defaultValue = "") String itemId,
+            @RequestParam(defaultValue = "") String sku,
+            @RequestParam(defaultValue = "") String ref,
             @RequestParam(required = false) Boolean attentionFlag,
             @RequestParam(required = false) Boolean criticalFlag,
             @RequestParam(defaultValue = "0") int page,
@@ -328,6 +334,8 @@ public class ApiController {
         filter.setDateTo(dateTo);
         filter.setSerialNumber(serialNumber);
         filter.setItemId(itemId);
+        filter.setSku(sku);
+        filter.setRef(ref);
         filter.setAttentionFlag(attentionFlag);
         filter.setCriticalFlag(criticalFlag);
 
@@ -363,6 +371,8 @@ public class ApiController {
             @RequestParam(required = false) LocalDate dateTo,
             @RequestParam(defaultValue = "") String serialNumber,
             @RequestParam(defaultValue = "") String itemId,
+            @RequestParam(defaultValue = "") String sku,
+            @RequestParam(defaultValue = "") String ref,
             @RequestParam(required = false) Boolean attentionFlag,
             @RequestParam(required = false) Boolean criticalFlag,
             @RequestParam(defaultValue = "0") int page,
@@ -377,6 +387,8 @@ public class ApiController {
             filter.setDateTo(dateTo);
             filter.setSerialNumber(serialNumber);
             filter.setItemId(itemId);
+            filter.setSku(sku);
+            filter.setRef(ref);
             filter.setAttentionFlag(attentionFlag);
             filter.setCriticalFlag(criticalFlag);
 

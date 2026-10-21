@@ -52,6 +52,8 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 interface ItemFilter {
+    sku?: string;
+    ref?: string;
     defectType?: string;
     totalResult?: string;
     cameraNumber?: number;
@@ -294,6 +296,18 @@ const OrderDetail: React.FC = () => {
             sorter: (a, b) => a.itemId.localeCompare(b.itemId),
         },
         {
+            title: 'SKU',
+            dataIndex: 'sku',
+            key: 'sku',
+            width: 140,
+        },
+        {
+            title: 'REF',
+            dataIndex: 'ref',
+            key: 'ref',
+            width: 140,
+        },
+        {
             title: t('field.serialNumber'),
             dataIndex: 'serialNumber',
             key: 'serialNumber',
@@ -506,6 +520,16 @@ const OrderDetail: React.FC = () => {
                     onChange={(e) => updateDraftFilters({ defectType: e.target.value })}
                     allowClear
                 />
+            </Col>
+            <Col span={12}>
+                <label htmlFor="order-item-filter-sku">SKU:</label>
+                <Input id="order-item-filter-sku" value={draftFilters.sku}
+                    onChange={event => updateDraftFilters({ sku: event.target.value })} allowClear />
+            </Col>
+            <Col span={12}>
+                <label htmlFor="order-item-filter-ref">REF:</label>
+                <Input id="order-item-filter-ref" value={draftFilters.ref}
+                    onChange={event => updateDraftFilters({ ref: event.target.value })} allowClear />
             </Col>
             <Col span={24}>
                 <Text>{t('items.flags')}:</Text>
@@ -763,7 +787,7 @@ const OrderDetail: React.FC = () => {
                             }));
                         },
                     }}
-                    scroll={{ x: 1420 }}
+                    scroll={{ x: 1700 }}
                     size="small"
                     rowClassName={(record) =>
                         selectedItem?.id === record.id ? 'ant-table-row-selected' : ''

@@ -173,6 +173,18 @@ const ItemsPage: React.FC = () => {
             width: 130,
         },
         {
+            title: 'SKU',
+            dataIndex: 'sku',
+            key: 'sku',
+            width: 140,
+        },
+        {
+            title: 'REF',
+            dataIndex: 'ref',
+            key: 'ref',
+            width: 140,
+        },
+        {
             title: t('field.serialNumber'),
             dataIndex: 'serialNumber',
             key: 'serialNumber',
@@ -318,6 +330,16 @@ const ItemsPage: React.FC = () => {
                         />
                     </Col>
                     <Col xs={24} sm={12} md={8}>
+                        <label htmlFor="item-filter-sku">SKU:</label>
+                        <Input id="item-filter-sku" value={filter.sku}
+                            onChange={event => setFilter(prev => ({ ...prev, sku: event.target.value }))} allowClear />
+                    </Col>
+                    <Col xs={24} sm={12} md={8}>
+                        <label htmlFor="item-filter-ref">REF:</label>
+                        <Input id="item-filter-ref" value={filter.ref}
+                            onChange={event => setFilter(prev => ({ ...prev, ref: event.target.value }))} allowClear />
+                    </Col>
+                    <Col xs={24} sm={12} md={8}>
                         <label>{t('items.flags')}:</label>
                         <div
                             style={{
@@ -373,7 +395,7 @@ const ItemsPage: React.FC = () => {
                     dataSource={items}
                     loading={loading}
                     rowKey="id"
-                    scroll={{ x: 1340 }}
+                    scroll={{ x: 1620 }}
                     onRow={(record) => ({
                         onDoubleClick: () => setSelectedItem(record),
                     })}

@@ -236,6 +236,16 @@ public class OrderService {
                 predicates.add(cb.equal(root.get("orderId"), filter.getOrderId()));
             }
 
+            if (filter.getSku() != null && !filter.getSku().isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("sku")),
+                        "%" + filter.getSku().toLowerCase(java.util.Locale.ROOT) + "%"));
+            }
+
+            if (filter.getRef() != null && !filter.getRef().isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("ref")),
+                        "%" + filter.getRef().toLowerCase(java.util.Locale.ROOT) + "%"));
+            }
+
             if (filter.getAttentionFlag() != null) {
                 predicates.add(cb.equal(root.get("attentionFlag"), filter.getAttentionFlag()));
             }

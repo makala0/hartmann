@@ -123,6 +123,41 @@ class OrderItemPaginationTests {
         assertThat(empty.getTotalCount()).isZero();
     }
 
+    @Test
+    @WithMockUser
+    void filtersItemSkuAndRefInBothOrderEndpoints() throws Exception {
+        Order order = createOrder(123L);
+        // Order metadata deliberately differs: filters must target the item columns.
+        order.setSku("order-sku");
+        order.setRef("order-ref");
+        orders.saveAndFlush(order);
+        createItem(123L, "matched", "NOK");
+        createItem(123L, "different", "NOK");
+        Item different = items.findByOrderIdOrderByIdAsc(order.getOrderId()).get(1);
+        ReflectionTestUtils.setField(different, "sku", "other-sku");
+        ReflectionTestUtils.setField(different, "ref", "other-ref");
+        items.flush();
+        createItem(999L, "foreign", "NOK");
+        for (String endpoint : java.util.List.of("/api/dashboard/orderDetailWithItems/" + order.getId(),
+                "/api/dashboard/order/" + order.getId() + "/items")) {
+            String rows = endpoint.contains("orderDetailWithItems") ? "items" : "content";
+            mvc.perform(get(endpoint).param("sku", "sk").param("ref", "re").param("totalResult", "NOK")
+                            .param("size", "1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.totalElements").value(2))
+                    .andExpect(jsonPath("$." + rows + ".length()").value(1));
+            mvc.perform(get(endpoint).param("sku", "SKU").param("ref", "REF").param("itemId", "matched"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.totalElements").value(1))
+                    .andExpect(jsonPath("$." + rows + "[0].sku").value("SKU"))
+                    .andExpect(jsonPath("$." + rows + "[0].ref").value("REF"));
+            for (String field : java.util.List.of("sku", "ref")) {
+                mvc.perform(get(endpoint).param(field, "missing"))
+                        .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
+            }
+        }
+    }
+
     private Order createOrder(long number) {
         Order order = new Order();
         order.setOrderId(number + 1000);

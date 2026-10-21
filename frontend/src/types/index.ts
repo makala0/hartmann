@@ -87,6 +87,8 @@ export interface OrderDetailDto {
 }
 
 export interface ItemFilter {
+    sku?: string;
+    ref?: string;
     defectType?: string;
     totalResult?: string;
     cameraNumber?: number;
@@ -138,6 +140,8 @@ export interface OrderFilter {
 }
 
 export interface ItemListFilter {
+    sku?: string;
+    ref?: string;
     totalResult?: string;
     cameraNumber?: number;
     itemId?: string;
