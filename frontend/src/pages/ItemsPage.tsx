@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Card, Checkbox, Col, Drawer, InputNumber, Row, Space, Table, Tag } from 'antd';
+import { Button, Card, Checkbox, Col, Drawer, Input, InputNumber, Select, Row, Space, Table, Tag } from 'antd';
 import { AlertOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, LeftOutlined, ReloadOutlined, RightOutlined, SearchOutlined, ToolOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
@@ -240,7 +240,7 @@ const ItemsPage: React.FC = () => {
     ];
 
     const handleSearch = () => {
-        setAppliedFilter(filter);
+        setAppliedFilter({ ...filter });
         setPagination(prev => ({ ...prev, current: 1 }));
     };
 
@@ -261,6 +261,60 @@ const ItemsPage: React.FC = () => {
                             style={{ width: '100%' }}
                             value={filter.orderId}
                             onChange={(value) => setFilter({ ...filter, orderId: value || undefined })}
+                        />
+                    </Col>
+                    <Col xs={24} sm={12} md={8}>
+                        <label htmlFor="item-filter-totalResult">{t('field.result')}:</label>
+                        <Select
+                            id="item-filter-totalResult"
+                            placeholder={t('placeholder.allResults')}
+                            style={{ width: '100%' }}
+                            value={filter.totalResult}
+                            onChange={value => setFilter(prev => ({ ...prev, totalResult: value }))}
+                            options={['OK', 'NOK', 'REWORK'].map(value => ({ value, label: value }))}
+                            allowClear
+                        />
+                    </Col>
+                    <Col xs={24} sm={12} md={8}>
+                        <label htmlFor="item-filter-cameraNumber">{t('field.camera')}:</label>
+                        <Select
+                            id="item-filter-cameraNumber"
+                            placeholder={t('placeholder.allCameras')}
+                            style={{ width: '100%' }}
+                            value={filter.cameraNumber}
+                            onChange={value => setFilter(prev => ({ ...prev, cameraNumber: value }))}
+                            options={[1, 2, 3, 4, 5].map(value => ({ value, label: `${t('field.camera')} ${value}` }))}
+                            allowClear
+                        />
+                    </Col>
+                    <Col xs={24} sm={12} md={8}>
+                        <label htmlFor="item-filter-itemId">{t('field.itemId')}:</label>
+                        <Input
+                            id="item-filter-itemId"
+                            placeholder={t('placeholder.searchItemId')}
+                            value={filter.itemId}
+                            onChange={event => setFilter(prev => ({ ...prev, itemId: event.target.value }))}
+                            allowClear
+                        />
+                    </Col>
+                    <Col xs={24} sm={12} md={8}>
+                        <label htmlFor="item-filter-serialNumber">{t('field.serialNumber')}:</label>
+                        <Input
+                            id="item-filter-serialNumber"
+                            placeholder={t('placeholder.searchSerial')}
+                            value={filter.serialNumber}
+                            onChange={event => setFilter(prev => ({ ...prev, serialNumber: event.target.value }))}
+                            allowClear
+                        />
+                    </Col>
+                    <Col xs={24} sm={12} md={8}>
+                        <label htmlFor="item-filter-defectType">{t('field.defectType')}:</label>
+                        <Input
+                            id="item-filter-defectType"
+                            placeholder={t('placeholder.searchDefect')}
+                            value={filter.defectType}
+                            onChange={event => setFilter(prev => ({ ...prev, defectType: event.target.value }))}
+                            allowClear
                         />
                     </Col>
                     <Col xs={24} sm={12} md={8}>
@@ -303,10 +357,10 @@ const ItemsPage: React.FC = () => {
                     <Col>
                         <Space>
                             <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
-                                Filtrovat
+                                {t('order.applyFilters')}
                             </Button>
                             <Button icon={<ReloadOutlined />} onClick={handleReset}>
-                                Reset
+                                {t('order.clearFilters')}
                             </Button>
                         </Space>
                     </Col>
@@ -333,7 +387,7 @@ const ItemsPage: React.FC = () => {
                         onChange: (page, pageSize) => {
                             setPagination(prev => ({
                                 ...prev,
-                                current: page,
+                                current: pageSize !== prev.pageSize ? 1 : page,
                                 pageSize: pageSize || prev.pageSize,
                             }));
                         },
