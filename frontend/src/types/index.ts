@@ -138,6 +138,11 @@ export interface OrderFilter {
 }
 
 export interface ItemListFilter {
+    totalResult?: string;
+    cameraNumber?: number;
+    itemId?: string;
+    serialNumber?: string;
+    defectType?: string;
     orderId?: number;
     attentionFlag?: boolean;
     criticalFlag?: boolean;

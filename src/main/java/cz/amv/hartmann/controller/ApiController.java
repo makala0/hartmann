@@ -214,6 +214,11 @@ public class ApiController {
     @GetMapping("/dashboard/items")
     public ResponseEntity<?> getItems(
             @RequestParam(defaultValue = "0") Long orderId,
+            @RequestParam(defaultValue = "") String totalResult,
+            @RequestParam(required = false) Integer cameraNumber,
+            @RequestParam(defaultValue = "") String itemId,
+            @RequestParam(defaultValue = "") String serialNumber,
+            @RequestParam(defaultValue = "") String defectType,
             @RequestParam(required = false) Boolean attentionFlag,
             @RequestParam(required = false) Boolean criticalFlag,
             @RequestParam(defaultValue = "0") int page,
@@ -221,10 +226,16 @@ public class ApiController {
     ) {
         ItemFilter filter = new ItemFilter();
         filter.setOrderId(orderId);
+        filter.setTotalResult(totalResult);
+        filter.setCameraNumber(cameraNumber);
+        filter.setItemId(itemId);
+        filter.setSerialNumber(serialNumber);
+        filter.setDefectType(defectType);
         filter.setAttentionFlag(attentionFlag);
         filter.setCriticalFlag(criticalFlag);
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("endInspectionTime").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("endInspectionTime").descending()
+                .and(Sort.by("id").descending()));
         Page<ItemDto> itemPage = this.orderService.searchItems(filter, pageable);
 
         Map<String, Object> response = new HashMap<>();
