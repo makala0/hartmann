@@ -45,6 +45,7 @@ import dayjs from 'dayjs';
 import apiClient from '../api/client';
 import type { OrderDetailWithItems, Item } from '../types';
 import ItemDetailContent from '../components/ItemDetailContent';
+import ItemPrioritySummary from '../components/ItemPrioritySummary';
 import { useLanguage } from '../i18n/LanguageContext';
 
 const { Title, Text } = Typography;
@@ -414,6 +415,12 @@ const OrderDetail: React.FC = () => {
             ],
             filterMultiple: false,
             filteredValue: filters.totalResult ? [filters.totalResult] : null,
+        },
+        {
+            title: t('priority.title'),
+            key: 'priority',
+            width: 240,
+            render: (_, record) => <ItemPrioritySummary priority={record.priority} />,
         },
         {
             title: t('field.warning'),
@@ -787,7 +794,7 @@ const OrderDetail: React.FC = () => {
                             }));
                         },
                     }}
-                    scroll={{ x: 1700 }}
+                    scroll={{ x: 1940 }}
                     size="small"
                     rowClassName={(record) =>
                         selectedItem?.id === record.id ? 'ant-table-row-selected' : ''
