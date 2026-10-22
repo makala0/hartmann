@@ -50,3 +50,11 @@ too, but never rewrites their stored camera codes/results. Keep old mapping
 versions with any exported data. Persisted versioned classifications should be
 introduced together with the final catalogue before authoritative historical
 defect-code reporting is enabled.
+
+
+## Concrete defect catalogue
+
+The generic priority described above remains the fallback for unclassified
+records. Configured concrete defect types can now use the versioned catalogue,
+persisted classifications, automatic completed-item indexing and main-code
+filters described in [defect-catalog.md](defect-catalog.md).

@@ -72,6 +72,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user, onLogout }) => 
             label: <Link to="/inspection">{t('nav.inspectionMode')}</Link>,
         },
         ...(canManageUsers ? [{
+            key: '/defect-catalog',
+            icon: <DatabaseOutlined />,
+            label: <Link to="/defect-catalog">{t('catalog.title')}</Link>,
+        }, {
             key: '/users',
             icon: <UserOutlined />,
             label: <Link to="/users">{t('nav.users')}</Link>,

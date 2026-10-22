@@ -2,7 +2,6 @@ package cz.amv.hartmann.service;
 
 import cz.amv.hartmann.domain.*;
 import cz.amv.hartmann.dto.*;
-import cz.amv.hartmann.repository.DefectRepository;
 import cz.amv.hartmann.repository.ItemRepository;
 import cz.amv.hartmann.repository.OrderRepository;
 import jakarta.persistence.criteria.Predicate;
@@ -26,25 +25,25 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ItemRepository itemRepository;
-    private final DefectRepository defectRepository;
     private final AppUserService appUserService;
     private final CriticalItemNotificationService criticalItemNotificationService;
-    private final ItemPriorityService itemPriorityService;
+    private final ItemInspectionMapper inspectionMapper;
+    private final ItemClassificationIndexer classificationIndexer;
 
     public OrderService(
             OrderRepository orderRepository,
             ItemRepository itemRepository,
-            DefectRepository defectRepository,
             AppUserService appUserService,
             CriticalItemNotificationService criticalItemNotificationService,
-            ItemPriorityService itemPriorityService
+            ItemInspectionMapper inspectionMapper,
+            ItemClassificationIndexer classificationIndexer
     ) {
         this.orderRepository = orderRepository;
         this.itemRepository = itemRepository;
-        this.defectRepository = defectRepository;
         this.appUserService = appUserService;
         this.criticalItemNotificationService = criticalItemNotificationService;
-        this.itemPriorityService = itemPriorityService;
+        this.inspectionMapper = inspectionMapper;
+        this.classificationIndexer = classificationIndexer;
     }
 
     public Map<String, Object> getDashboardStats(List<Order> filteredOrders, long totalRecipes) {
@@ -216,20 +215,43 @@ public class OrderService {
     }
 
     public Page<ItemDto> searchItems(ItemFilter filter, Pageable pageable) {
+        prepareClassificationFilter(filter);
         Page<Item> itemPage = itemRepository.findAll(toItemSpecification(null, filter), pageable);
         return new PageImpl<>(convertToDtos(itemPage.getContent()), pageable, itemPage.getTotalElements());
     }
 
     public Page<Item> searchItemsInOrder(Long orderId, ItemFilter filter, Pageable pageable) {
+        prepareClassificationFilter(filter);
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Objednávka nenalezena: " + orderId));
 
         return itemRepository.findAll(toItemSpecification(order.getOrderId(), filter), pageable);
     }
 
+    private void prepareClassificationFilter(ItemFilter filter) {
+        if (filter.getMainDefectCode() != null && !filter.getMainDefectCode().isBlank()) classificationIndexer.catchUp();
+    }
+
     private Specification<Item> toItemSpecification(Long orderId, ItemFilter filter) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
+
+            if (filter.getMainDefectCode() != null && !filter.getMainDefectCode().isBlank()) {
+                var latest = query.subquery(Long.class);
+                var history = latest.from(ItemClassification.class);
+                latest.select(cb.max(history.<Long>get("id"))).where(cb.equal(history.get("itemRecordId"), root.get("id")));
+                var matched = query.subquery(Long.class);
+                var snapshot = matched.from(ItemClassification.class);
+                matched.select(snapshot.get("id")).where(
+                        cb.equal(snapshot.get("id"), latest),
+                        cb.equal(snapshot.get("itemRecordId"), root.get("id")),
+                        cb.equal(cb.upper(snapshot.get("code")), filter.getMainDefectCode().trim().toUpperCase(java.util.Locale.ROOT)));
+                predicates.add(cb.exists(matched));
+                var identityCount = query.subquery(Long.class);
+                var identity = identityCount.from(Item.class);
+                identityCount.select(cb.count(identity)).where(cb.equal(identity.get("itemId"), root.get("itemId")));
+                predicates.add(cb.equal(identityCount, 1L));
+            }
 
             if (orderId != null) {
                 predicates.add(cb.equal(root.get("orderId"), orderId));
@@ -305,6 +327,7 @@ public class OrderService {
     }
 
     public OrderDetailWithItemsDto getOrderDetailWithItems(Long orderId, ItemFilter filter, Pageable pageable) {
+        prepareClassificationFilter(filter);
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Objednávka nenalezena: " + orderId));
 
@@ -424,35 +447,6 @@ public class OrderService {
                 .toList();
     }
 
-    private ItemDto convertToDto(Item item) {
-        ItemDto dto = new ItemDto();
-        dto.setPriority(itemPriorityService.evaluate(item.getStation1Result(), item.getStation2Result(), item.getStation3Result()));
-        dto.setComment(item.getComment());
-        dto.setId(item.getId());
-        dto.setItemId(item.getItemId());
-        dto.setSerialNumber(item.getSerialNumber());
-        dto.setEndInspectionTime(item.getEndInspectionTime());
-        dto.setSku(item.getSku());
-        dto.setRef(item.getRef());
-        dto.setOrderNumber(item.getOrderNumber());
-        dto.setOrderId(item.getOrderId());
-        dto.setCameraNumber(item.getCameraNumber());
-        dto.setDefectType(item.getDefectType());
-        dto.setTotalResult(item.getTotalResult());
-        dto.setStation1Result(item.getStation1Result());
-        dto.setStation2Result(item.getStation2Result());
-        dto.setStation3Result(item.getStation3Result());
-        dto.setStation1ImagePath(item.getStation1ImagePath());
-        dto.setStation2ImagePath(item.getStation2ImagePath());
-        dto.setStation3ImagePath(item.getStation3ImagePath());
-        dto.setAttentionFlag(item.getAttentionFlag());
-        dto.setCriticalFlag(item.getCriticalFlag());
-        dto.setCriticalNotificationSent(item.getCriticalNotificationSent());
-        dto.setWarningNotificationSent(item.getWarningNotificationSent());
-        dto.setDefects(List.of());
-        return dto;
-    }
-
     @Transactional
     public ItemDto updateItemComment(Long id, String comment) {
         Item item = itemRepository.findById(id).orElseThrow(() ->
@@ -462,40 +456,7 @@ public class OrderService {
         return convertToDtoWithDefects(itemRepository.saveAndFlush(item));
     }
 
-    private ItemDto convertToDtoWithDefects(Item item) {
-        ItemDto dto = convertToDto(item);
-        dto.setDefects(defectRepository.findByItemIdIn(List.of(item.getItemId())).stream()
-                .map(this::convertToDto)
-                .toList());
-        return dto;
-    }
-
-    private List<ItemDto> convertToDtos(List<Item> items) {
-        List<ItemDto> itemDtos = items.stream().map(this::convertToDto).collect(Collectors.toList());
-        List<String> itemIds = items.stream().map(Item::getItemId).toList();
-        Map<String, List<DefectDto>> defectsByItemId = itemIds.isEmpty()
-                ? Map.of()
-                : defectRepository.findByItemIdIn(itemIds).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.groupingBy(DefectDto::getItemId));
-
-        itemDtos.forEach(itemDto -> itemDto.setDefects(
-                defectsByItemId.getOrDefault(itemDto.getItemId(), List.of())
-        ));
-
-        return itemDtos;
-    }
-
-    private DefectDto convertToDto(Defect defect) {
-        DefectDto dto = new DefectDto();
-        dto.setId(defect.getId());
-        dto.setItemId(defect.getItemId());
-        dto.setPositionX(defect.getPositionX());
-        dto.setPositionY(defect.getPositionY());
-        dto.setWidth(defect.getWidth());
-        dto.setHeight(defect.getHeight());
-        dto.setStation(defect.getStation());
-        dto.setType(defect.getType());
-        return dto;
-    }
+    private ItemDto convertToDto(Item item) { return inspectionMapper.convertToDto(item); }
+    private ItemDto convertToDtoWithDefects(Item item) { return inspectionMapper.convertToDtoWithDefects(item); }
+    public List<ItemDto> convertToDtos(List<Item> items) { return inspectionMapper.convertToDtos(items); }
 }

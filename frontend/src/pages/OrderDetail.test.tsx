@@ -113,6 +113,7 @@ test('panel edits are applied together only on confirmation and drafts do not af
     await waitFor(() => expect(screen.getByTestId('page')).toHaveTextContent('2'));
     fireEvent.click(screen.getByText('common.filters'));
     const requestsBeforeEditing = (apiClient.get as jest.Mock).mock.calls.length;
+    fireEvent.change(screen.getByLabelText('catalog.mainCode:'), { target: { value: '3.1.1' } });
     fireEvent.change(screen.getByLabelText('SKU:'), { target: { value: 'sku' } });
     fireEvent.change(screen.getByLabelText('REF:'), { target: { value: 'ref' } });
     fireEvent.change(screen.getByPlaceholderText('placeholder.searchItemId'), { target: { value: 'kus' } });
@@ -122,13 +123,13 @@ test('panel edits are applied together only on confirmation and drafts do not af
     fireEvent.click(screen.getByText('order.applyFilters'));
     await waitFor(() => expect(screen.getByTestId('page')).toHaveTextContent('1'));
     expect(apiClient.get).toHaveBeenLastCalledWith('/dashboard/orderDetailWithItems/123', {
-        params: { sku: 'sku', ref: 'ref', itemId: 'kus', serialNumber: '123', page: 0, size: 20 },
+        params: { mainDefectCode: '3.1.1', sku: 'sku', ref: 'ref', itemId: 'kus', serialNumber: '123', page: 0, size: 20 },
     });
     fireEvent.change(screen.getByPlaceholderText('placeholder.searchSerial'), { target: { value: '456' } });
     fireEvent.click(screen.getByText('Next page'));
     await waitFor(() => expect(screen.getByTestId('page')).toHaveTextContent('2'));
     expect(apiClient.get).toHaveBeenLastCalledWith('/dashboard/orderDetailWithItems/123', {
-        params: { sku: 'sku', ref: 'ref', itemId: 'kus', serialNumber: '123', page: 1, size: 20 },
+        params: { mainDefectCode: '3.1.1', sku: 'sku', ref: 'ref', itemId: 'kus', serialNumber: '123', page: 1, size: 20 },
     });
     expect(screen.getByPlaceholderText('placeholder.searchSerial')).toHaveValue('456');
     fireEvent.click(screen.getByText('order.clearFilters'));
@@ -139,6 +140,7 @@ test('panel edits are applied together only on confirmation and drafts do not af
     fireEvent.click(screen.getByText('common.filters'));
     expect(screen.getByPlaceholderText('placeholder.searchItemId')).toHaveValue('');
     expect(screen.getByPlaceholderText('placeholder.searchSerial')).toHaveValue('');
+    expect(screen.getByLabelText('catalog.mainCode:')).toHaveValue('');
     expect(screen.getByLabelText('SKU:')).toHaveValue('');
     expect(screen.getByLabelText('REF:')).toHaveValue('');
 });

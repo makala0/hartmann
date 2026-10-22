@@ -221,6 +221,7 @@ public class ApiController {
             @RequestParam(defaultValue = "") String ref,
             @RequestParam(defaultValue = "") String serialNumber,
             @RequestParam(defaultValue = "") String defectType,
+            @RequestParam(defaultValue = "") String mainDefectCode,
             @RequestParam(required = false) Boolean attentionFlag,
             @RequestParam(required = false) Boolean criticalFlag,
             @RequestParam(defaultValue = "0") int page,
@@ -235,6 +236,7 @@ public class ApiController {
         filter.setRef(ref);
         filter.setSerialNumber(serialNumber);
         filter.setDefectType(defectType);
+        filter.setMainDefectCode(mainDefectCode);
         filter.setAttentionFlag(attentionFlag);
         filter.setCriticalFlag(criticalFlag);
 
@@ -313,6 +315,7 @@ public class ApiController {
     public ResponseEntity<?> getOrderItems(
             @PathVariable Long id,
             @RequestParam(defaultValue = "") String defectType,
+            @RequestParam(defaultValue = "") String mainDefectCode,
             @RequestParam(defaultValue = "") String totalResult,
             @RequestParam(required = false) Integer cameraNumber,
             @RequestParam(required = false) LocalDate dateFrom,
@@ -328,6 +331,7 @@ public class ApiController {
     ) {
         ItemFilter filter = new ItemFilter();
         filter.setDefectType(defectType);
+        filter.setMainDefectCode(mainDefectCode);
         filter.setTotalResult(totalResult);
         filter.setCameraNumber(cameraNumber);
         filter.setDateFrom(dateFrom);
@@ -365,6 +369,7 @@ public class ApiController {
     public ResponseEntity<?> getOrderDetailWithItems(
             @PathVariable Long id,
             @RequestParam(defaultValue = "") String defectType,
+            @RequestParam(defaultValue = "") String mainDefectCode,
             @RequestParam(defaultValue = "") String totalResult,
             @RequestParam(required = false) Integer cameraNumber,
             @RequestParam(required = false) LocalDate dateFrom,
@@ -381,6 +386,7 @@ public class ApiController {
         try {
             ItemFilter filter = new ItemFilter();
             filter.setDefectType(defectType);
+            filter.setMainDefectCode(mainDefectCode);
             filter.setTotalResult(totalResult);
             filter.setCameraNumber(cameraNumber);
             filter.setDateFrom(dateFrom);

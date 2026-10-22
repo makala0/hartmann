@@ -32,6 +32,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout").permitAll()
                         .requestMatchers("/", "/static/**", "/favicon.ico", "/manifest.json", "/logo192.png", "/logo512.png").permitAll()
                         .requestMatchers("/login", "/register", "/dashboard/**").permitAll() // React routes
+                        .requestMatchers("/api/defect-catalog/**", "/api/defect-catalog").hasAnyRole("ADMIN", "SERVICE")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )

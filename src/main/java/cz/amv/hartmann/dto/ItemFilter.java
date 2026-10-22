@@ -8,6 +8,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class ItemFilter {
+    private String mainDefectCode;
     private String sku;
     private String ref;
     private String defectType;

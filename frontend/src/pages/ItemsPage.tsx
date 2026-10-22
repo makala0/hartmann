@@ -337,6 +337,11 @@ const ItemsPage: React.FC = () => {
                         />
                     </Col>
                     <Col xs={24} sm={12} md={8}>
+                        <label htmlFor="item-filter-mainDefectCode">{t('catalog.mainCode')}:</label>
+                        <Input id="item-filter-mainDefectCode" value={filter.mainDefectCode}
+                            onChange={event => setFilter(prev => ({ ...prev, mainDefectCode: event.target.value }))} allowClear />
+                    </Col>
+                    <Col xs={24} sm={12} md={8}>
                         <label htmlFor="item-filter-sku">SKU:</label>
                         <Input id="item-filter-sku" value={filter.sku}
                             onChange={event => setFilter(prev => ({ ...prev, sku: event.target.value }))} allowClear />

@@ -10,4 +10,8 @@ public class ItemPriorityDto {
     private String code;
     private String logicalKey;
     private String codeVersion;
+    private String descriptionCs;
+    private String descriptionEn;
+    private Long snapshotId;
+    private String catalogStatus;
 }
