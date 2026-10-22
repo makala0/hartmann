@@ -8,6 +8,10 @@ export type TranslationKey = string;
 
 const translations: Record<Language, Record<TranslationKey, string>> = {
     cs: {
+        'priority.title': 'Výsledek dle priorit',
+        'priority.incomplete': 'Neúplné výsledky stanic',
+        'priority.unspecified': 'Nespecifikovaná vada stanice',
+        'priority.codeVersion': 'Verze kódů',
         'itemDetail.commentTitle': 'Komentář ke kusu',
         'itemDetail.commentPlaceholder': 'Přidat komentář ke kusu',
         'itemDetail.saveComment': 'Uložit komentář',
@@ -34,6 +38,10 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
         'itemDetail.imageUnavailable': 'Obrázek není dostupný', 'itemDetail.flagSaved': 'Označení kusu bylo uloženo', 'itemDetail.flagSaveFailed': 'Označení kusu se nepodařilo uložit', 'itemDetail.flagsTitle': 'Označení kusu', 'itemDetail.flagsExtra': 'Ruční priorita kontroly', 'itemDetail.warningDescription': 'Vyžaduje zvýšenou pozornost', 'itemDetail.criticalDescription': 'Kritický kus k prioritnímu řešení', 'itemDetail.confirmCriticalTitle': 'Opravdu označit kus jako kritický?', 'itemDetail.confirmCriticalContent': 'Po zaškrtnutí pole Kritická se ihned odešle e-mail vybraným adresátům.', 'itemDetail.confirmCriticalOk': 'Ano, označit a odeslat e-mail', 'itemDetail.pendingCriticalTitle': 'Čeká na odeslání e-mailu', 'itemDetail.pendingCriticalOnlineDescription': 'Kus je označen jako kritický, ale e-mail se zatím nepodařilo odeslat. Zkontrolujte připojení k internetu a zkuste odeslat čekající upozornění.', 'itemDetail.pendingCriticalOfflineDescription': 'Jste offline. E-mail se odešle až po obnovení připojení k internetu.', 'itemDetail.sendPendingCritical': 'Odeslat čekající upozornění', 'itemDetail.pendingCriticalSent': 'Čekající kritická upozornění byla odeslána', 'itemDetail.pendingCriticalStillPending': 'E-mail se nepodařilo odeslat. Zkontrolujte připojení k internetu a SMTP server a zkuste to znovu.', 'itemDetail.pendingCriticalSendFailed': 'Odeslání čekajících kritických upozornění selhalo', 'itemDetail.basicInfo': 'Základní informace', 'itemDetail.checkResults': 'Výsledky kontrol', 'itemDetail.station': 'Stanice', 'itemDetail.stationImages': 'Obrázky ze stanic',
     },
     en: {
+        'priority.title': 'Result by priority',
+        'priority.incomplete': 'Incomplete station results',
+        'priority.unspecified': 'Unspecified defect at station',
+        'priority.codeVersion': 'Code version',
         'itemDetail.commentTitle': 'Item comment',
         'itemDetail.commentPlaceholder': 'Add a comment to this item',
         'itemDetail.saveComment': 'Save comment',

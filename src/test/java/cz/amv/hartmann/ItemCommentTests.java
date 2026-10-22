@@ -47,12 +47,18 @@ class ItemCommentTests {
         createItem(123L, "first", "NOK");
         createItem(123L, "second", "OK");
         var selected = items.findByOrderIdOrderByIdAsc(order.getOrderId()).get(0);
+        ReflectionTestUtils.setField(selected, "station1Result", "REWORK");
+        ReflectionTestUtils.setField(selected, "station2Result", "NOK");
+        ReflectionTestUtils.setField(selected, "station3Result", "REWORK");
+        items.saveAndFlush(selected);
         Long id = selected.getId();
         Long orderId = order.getId();
         save(id, "{\"comment\":\"Žluťoučký komentář\"}")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.comment").value("Žluťoučký komentář"))
                 .andExpect(jsonPath("$.itemId").value("first"))
+                .andExpect(jsonPath("$.priority.result").value("NOK"))
+                .andExpect(jsonPath("$.priority.station").value(2))
                 .andExpect(jsonPath("$.totalResult").value("NOK"));
         entityManager.flush();
         entityManager.clear();

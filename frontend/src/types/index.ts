@@ -30,6 +30,14 @@ export interface Defect {
 }
 
 export interface Item {
+    priority?: {
+        status: 'COMPLETE' | 'INCOMPLETE';
+        result?: string | null;
+        station?: number | null;
+        code?: string | null;
+        logicalKey?: string | null;
+        codeVersion?: string | null;
+    };
     comment?: string | null;
     id: number;
     itemId: string;

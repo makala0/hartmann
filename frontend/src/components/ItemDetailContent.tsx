@@ -19,6 +19,7 @@ import { AlertOutlined, CameraOutlined, CheckCircleOutlined, CloseCircleOutlined
 import dayjs from 'dayjs';
 import apiClient from '../api/client';
 import ItemCommentEditor from './ItemCommentEditor';
+import ItemPrioritySummary from './ItemPrioritySummary';
 import type { Defect, Item } from '../types';
 import { getImageUrl } from '../utils/imageUtils';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -470,6 +471,10 @@ const ItemDetailContent: React.FC<ItemDetailContentProps> = ({ item, onItemChang
                     <ItemCommentEditor key={item.id} item={item} onItemChange={onItemChange} />
 
                     <Card title={t('itemDetail.checkResults')} size="small">
+                        <div style={{ marginBottom: 16 }}>
+                            <Text strong>{t('priority.title')}: </Text>
+                            <ItemPrioritySummary priority={item.priority} />
+                        </div>
                         <Row gutter={[16, 16]}>
                             {[
                                 { num: 1, result: item.station1Result },

@@ -7,6 +7,7 @@ import java.util.List;
 
 @Data
 public class ItemDto {
+    private ItemPriorityDto priority;
     private String comment;
     private Long id;
     private String itemId;

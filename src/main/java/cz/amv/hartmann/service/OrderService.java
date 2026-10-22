@@ -29,19 +29,22 @@ public class OrderService {
     private final DefectRepository defectRepository;
     private final AppUserService appUserService;
     private final CriticalItemNotificationService criticalItemNotificationService;
+    private final ItemPriorityService itemPriorityService;
 
     public OrderService(
             OrderRepository orderRepository,
             ItemRepository itemRepository,
             DefectRepository defectRepository,
             AppUserService appUserService,
-            CriticalItemNotificationService criticalItemNotificationService
+            CriticalItemNotificationService criticalItemNotificationService,
+            ItemPriorityService itemPriorityService
     ) {
         this.orderRepository = orderRepository;
         this.itemRepository = itemRepository;
         this.defectRepository = defectRepository;
         this.appUserService = appUserService;
         this.criticalItemNotificationService = criticalItemNotificationService;
+        this.itemPriorityService = itemPriorityService;
     }
 
     public Map<String, Object> getDashboardStats(List<Order> filteredOrders, long totalRecipes) {
@@ -423,6 +426,7 @@ public class OrderService {
 
     private ItemDto convertToDto(Item item) {
         ItemDto dto = new ItemDto();
+        dto.setPriority(itemPriorityService.evaluate(item.getStation1Result(), item.getStation2Result(), item.getStation3Result()));
         dto.setComment(item.getComment());
         dto.setId(item.getId());
         dto.setItemId(item.getItemId());

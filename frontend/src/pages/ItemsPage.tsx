@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import apiClient from '../api/client';
 import type { Item, ItemListFilter } from '../types';
 import ItemDetailContent from '../components/ItemDetailContent';
+import ItemPrioritySummary from '../components/ItemPrioritySummary';
 import { useLanguage } from '../i18n/LanguageContext';
 
 const ItemsPage: React.FC = () => {
@@ -217,6 +218,12 @@ const ItemsPage: React.FC = () => {
             ),
         },
         {
+            title: t('priority.title'),
+            key: 'priority',
+            width: 240,
+            render: (_, record) => <ItemPrioritySummary priority={record.priority} />,
+        },
+        {
             title: t('field.warning'),
             dataIndex: 'attentionFlag',
             key: 'attentionFlag',
@@ -395,7 +402,7 @@ const ItemsPage: React.FC = () => {
                     dataSource={items}
                     loading={loading}
                     rowKey="id"
-                    scroll={{ x: 1620 }}
+                    scroll={{ x: 1860 }}
                     onRow={(record) => ({
                         onDoubleClick: () => setSelectedItem(record),
                     })}
