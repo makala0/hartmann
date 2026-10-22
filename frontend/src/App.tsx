@@ -8,6 +8,7 @@ import Profile from './pages/Profile';
 import OrderDetail from './pages/OrderDetail';
 import InspectionMode from './pages/InspectionMode';
 import ItemsPage from './pages/ItemsPage';
+import DefectCatalog from './pages/DefectCatalog';
 import MainLayout from './components/Layout/MainLayout';
 import apiClient from './api/client';
 import type { User } from './types';
@@ -116,6 +117,13 @@ const AppRoutes: React.FC = () => {
                             </PrivateRoute>
                         }
                     />
+                    <Route path="/defect-catalog" element={
+                        <PrivateRoute user={user}>
+                            {user && ['ROLE_ADMIN', 'ROLE_SERVICE'].includes(user.role || '')
+                                ? <MainLayout user={user} onLogout={() => setUser(null)}><DefectCatalog /></MainLayout>
+                                : <Navigate to="/dashboard" />}
+                        </PrivateRoute>
+                    } />
                     <Route path="/" element={<Navigate to="/dashboard" />} />
                 </Routes>
             </BrowserRouter>

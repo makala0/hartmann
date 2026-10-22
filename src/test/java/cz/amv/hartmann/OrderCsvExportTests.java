@@ -74,7 +74,7 @@ class OrderCsvExportTests {
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertThat(csv.split("\r\n")).hasSize(2);
         assertThat(csv).contains("\"456\"").doesNotContain("null");
-        assertThat(csv.split("\r\n")[1].split(";", -1)).hasSize(21);
+        assertThat(csv.split("\r\n")[1].split(";", -1)).hasSize(27);
     }
 
     private Order createOrder(long number) {

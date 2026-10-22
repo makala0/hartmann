@@ -53,6 +53,7 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 interface ItemFilter {
+    mainDefectCode?: string;
     sku?: string;
     ref?: string;
     defectType?: string;
@@ -527,6 +528,11 @@ const OrderDetail: React.FC = () => {
                     onChange={(e) => updateDraftFilters({ defectType: e.target.value })}
                     allowClear
                 />
+            </Col>
+            <Col span={12}>
+                <label htmlFor="order-item-filter-mainDefectCode">{t('catalog.mainCode')}:</label>
+                <Input id="order-item-filter-mainDefectCode" value={draftFilters.mainDefectCode}
+                    onChange={event => updateDraftFilters({ mainDefectCode: event.target.value })} allowClear />
             </Col>
             <Col span={12}>
                 <label htmlFor="order-item-filter-sku">SKU:</label>

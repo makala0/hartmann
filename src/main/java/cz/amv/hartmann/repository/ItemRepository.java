@@ -10,6 +10,20 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ItemRepository extends JpaRepository<Item, Long>, JpaSpecificationExecutor<Item> {
+    Optional<Item> findTopByOrderByIdDesc();
+    List<Item> findByIdGreaterThanAndIdLessThanEqualOrderByIdAsc(Long after, Long boundary, org.springframework.data.domain.Pageable page);
+    long countByItemId(String itemId);
+    @Query("SELECT i.itemId AS itemId, COUNT(i) AS total FROM Item i WHERE i.itemId IN :ids GROUP BY i.itemId")
+    List<IdentityCount> countIdentities(@Param("ids") java.util.Collection<String> ids);
+
+    interface IdentityCount {
+        String getItemId();
+        long getTotal();
+    }
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT i FROM Item i WHERE i.id = :id")
+    Optional<Item> lockForClassification(@Param("id") Long id);
 
     List<Item> findByOrderId(Long orderId);
 

@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "defects")
+@Table(name = "defects", indexes = @Index(name = "idx_defects_item_id", columnList = "item_id"))
 public class Defect {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,8 +40,8 @@ public class Defect {
     @Column(name = "station", nullable = false, length = 10)
     private String station;
 
-    @Size(max = 10)
+    @Size(max = 200)
     @NotNull
-    @Column(name = "type", nullable = false, length = 10)
+    @Column(name = "type", nullable = false, length = 200)
     private String type;
 }

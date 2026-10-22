@@ -2,6 +2,8 @@ package cz.amv.hartmann.service;
 
 import cz.amv.hartmann.domain.Item;
 import cz.amv.hartmann.domain.Order;
+import cz.amv.hartmann.dto.ItemDto;
+import cz.amv.hartmann.dto.ItemPriorityDto;
 import cz.amv.hartmann.repository.ItemRepository;
 import cz.amv.hartmann.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,27 +22,31 @@ import java.util.stream.Collectors;
 public class OrderCsvService {
     private final OrderRepository orderRepository;
     private final ItemRepository itemRepository;
+    private final OrderService orderService;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public byte[] export(Long id) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Zakázka nenalezena"));
         // Match the order-detail association; do not apply table filters or pagination.
         List<Item> items = itemRepository.findByOrderIdOrderByIdAsc(order.getOrderId());
+        List<ItemDto> itemDtos = orderService.convertToDtos(items);
         StringBuilder csv = new StringBuilder("\uFEFF");
         row(csv, "ID zakázky", "Číslo zakázky", "SKU zakázky", "Ref zakázky", "Typ linky",
                 "Receptura", "Zahájení zakázky (UTC)", "Komentář zakázky", "Item ID", "Sériové číslo",
                 "Čas kontroly (UTC)", "SKU kusu", "Ref kusu", "Kamera", "Typ vady", "Celkový výsledek",
-                "Výsledek stanice 1", "Výsledek stanice 2", "Výsledek stanice 3", "Varování", "Kritická");
+                "Výsledek stanice 1", "Výsledek stanice 2", "Výsledek stanice 3", "Varování", "Kritická",
+                "Kód vady z číselníku", "Popis hlavní vady", "Verze pravidla", "Hlavní stanice", "Stav mapování", "ID vyhodnocení");
         if (items.isEmpty()) {
-            appendItem(csv, order, null);
+            appendItem(csv, order, null, null);
         } else {
-            items.forEach(item -> appendItem(csv, order, item));
+            for (int i = 0; i < items.size(); i++) appendItem(csv, order, items.get(i), itemDtos.get(i).getPriority());
         }
         return csv.toString().getBytes(StandardCharsets.UTF_8);
     }
 
-    private void appendItem(StringBuilder csv, Order order, Item item) {
+    private void appendItem(StringBuilder csv, Order order, Item item, ItemPriorityDto priority) {
+        boolean classified = priority != null && "CLASSIFIED".equals(priority.getCatalogStatus());
         row(csv, order.getOrderId(), order.getOrderNumber(), order.getSku(), order.getRef(),
                 order.getLineType(), order.getRecipe(), order.getOrderBeginDate(), order.getComment(),
                 item == null ? null : item.getItemId(), item == null ? null : item.getSerialNumber(),
@@ -50,7 +56,10 @@ public class OrderCsvService {
                 item == null ? null : item.getStation1Result(), item == null ? null : item.getStation2Result(),
                 item == null ? null : item.getStation3Result(),
                 item == null ? null : Boolean.TRUE.equals(item.getAttentionFlag()) ? "Ano" : "Ne",
-                item == null ? null : Boolean.TRUE.equals(item.getCriticalFlag()) ? "Ano" : "Ne");
+                item == null ? null : Boolean.TRUE.equals(item.getCriticalFlag()) ? "Ano" : "Ne",
+                classified ? priority.getCode() : null, classified ? priority.getDescriptionCs() : null,
+                classified ? priority.getCodeVersion() : null, classified ? priority.getStation() : null,
+                priority == null ? null : priority.getCatalogStatus(), classified ? priority.getSnapshotId() : null);
     }
 
     private void row(StringBuilder csv, Object... values) {

@@ -37,6 +37,10 @@ export interface Item {
         code?: string | null;
         logicalKey?: string | null;
         codeVersion?: string | null;
+        descriptionCs?: string | null;
+        descriptionEn?: string | null;
+        snapshotId?: number | null;
+        catalogStatus?: string | null;
     };
     comment?: string | null;
     id: number;
@@ -95,6 +99,7 @@ export interface OrderDetailDto {
 }
 
 export interface ItemFilter {
+    mainDefectCode?: string;
     sku?: string;
     ref?: string;
     defectType?: string;
@@ -148,6 +153,7 @@ export interface OrderFilter {
 }
 
 export interface ItemListFilter {
+    mainDefectCode?: string;
     sku?: string;
     ref?: string;
     totalResult?: string;
@@ -160,4 +166,18 @@ export interface ItemListFilter {
     criticalFlag?: boolean;
     page?: number;
     size?: number;
+}
+
+export interface DefectRule {
+    id: number;
+    station: number;
+    cameraType: string;
+    revision: number;
+    code: string;
+    descriptionCs: string;
+    descriptionEn?: string;
+    severity: 'NOK' | 'REWORK';
+    priority?: number | null;
+    enabled: boolean;
+    createdAt: string;
 }

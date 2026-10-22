@@ -10,7 +10,10 @@ import org.hibernate.annotations.ColumnDefault;
 import java.time.Instant;
 
 @Entity
-@Table(name = "item")
+@Table(name = "item", indexes = {
+        @Index(name = "idx_item_business_id", columnList = "item_id"),
+        @Index(name = "idx_item_order_id", columnList = "order_id")
+})
 @Getter
 public class Item {
     @Setter
