@@ -8,7 +8,7 @@ until the task has been completed and the user requests that integration.**
 Admin and Service users have a **Číselník vad / Defect catalogue** menu entry at
 `/defect-catalog`. Worker access is denied on the server as well as hidden in
 navigation. A rule maps one station (1–3) and one camera defect name to a display
-code, Czech/English description, NOK/REWORK, optional within-station priority,
+code, Czech/English description, optional within-station priority,
 and enabled/disabled state.
 
 `Defects.station` is read as ST1, ST2 or ST3 (case-insensitive, trimmed).
@@ -16,7 +16,7 @@ and enabled/disabled state.
 Names are trimmed, Unicode NFC-normalized and compared case-insensitively.
 Different spelling/diacritics remain different names: `svár` is not guessed to
 mean `svar`. The UI can be used to create explicit mappings after verification.
-No station/severity mapping or unpublished client code is guessed or seeded.
+No station/type mapping or unpublished client code is guessed or seeded.
 
 Each save inserts a new immutable revision. The current revision ID is sent as
 `previousRuleId`, and stale updates return 409. Turning a mapping off also
@@ -32,7 +32,8 @@ On reading an item with defects, the service attempts catalogue classification:
 1. Ambiguous business Item IDs are rejected (legacy `Defects.item_id` cannot
    identify a unique item if the name occurs on multiple records).
 2. Every observation must have a known enabled mapping for its station/name.
-3. Mapped severities per station must agree with the camera's station results.
+3. Severity comes exclusively from Vision's Item station results (OK/NOK/REWORK).
+   The catalogue never defines severity. Unknown results or defects on an OK station remain unresolved.
 4. Selection is NOK before REWORK, then **ST3 → ST1 → ST2**.
 5. Different types tied on the same station require explicit priorities; higher
    numbers win. Missing or equal priorities remain unresolved rather than using
@@ -122,3 +123,5 @@ this SQL Server migration. No production schema was changed during development.
 The delayed drawing extension is not included: image overlays and geometry
 remain as before. Unmapped types, camera inconsistencies and intra-station ties
 must be resolved through verified catalogue data, not invented meanings.
+
+For databases already using the previous catalogue prototype, remove the NOT NULL constraint on the obsolete defect_rules.severity column (or drop that unused column) before saving new rules. No existing classification snapshots are rewritten.

@@ -62,7 +62,7 @@ public class DefectCatalogService {
         rule.setStation(form.getStation()); rule.setCameraType(normalize(form.getCameraType()));
         rule.setRevision(previous == null ? 1 : previous.getRevision() + 1);
         rule.setCode(form.getCode().trim()); rule.setDescriptionCs(form.getDescriptionCs().trim());
-        rule.setDescriptionEn(form.getDescriptionEn()); rule.setSeverity(form.getSeverity());
+        rule.setDescriptionEn(form.getDescriptionEn());
         rule.setPriority(form.getPriority()); rule.setEnabled(form.isEnabled()); rule.setCreatedAt(Instant.now());
         return rules.saveAndFlush(rule);
     }

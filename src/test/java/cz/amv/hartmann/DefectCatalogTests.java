@@ -53,9 +53,9 @@ class DefectCatalogTests {
         d.setPositionX(50f); d.setPositionY(50f); d.setWidth(10f); d.setHeight(10f); defects.saveAndFlush(d);
     }
 
-    private DefectRule rule(int station, String type, String severity, Integer priority, String code) {
+    private DefectRule rule(int station, String type, Integer priority, String code) {
         DefectRuleForm form = new DefectRuleForm(); form.setStation(station); form.setCameraType(type);
-        form.setSeverity(severity); form.setPriority(priority); form.setCode(code); form.setDescriptionCs(type);
+        form.setPriority(priority); form.setCode(code); form.setDescriptionCs(type);
         DefectRule previous = catalog.current().get(DefectCatalogService.key(station, type));
         form.setPreviousRuleId(previous == null ? null : previous.getId());
         return catalog.save(form);
@@ -76,7 +76,7 @@ class DefectCatalogTests {
     }
 
     @Test @WithMockUser(roles = "ADMIN") void adminCanCreateButCannotOverwriteARevision() throws Exception {
-        String json = "{\"station\":3,\"cameraType\":\"chybějící svár\",\"code\":\"3.1.1\",\"descriptionCs\":\"Chybějící svár\",\"severity\":\"REWORK\"}";
+        String json = "{\"station\":3,\"cameraType\":\"chybějící svár\",\"code\":\"3.1.1\",\"descriptionCs\":\"Chybějící svár\"}";
         mvc.perform(post("/api/defect-catalog").contentType("application/json").content(json))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.revision").value(1));
         mvc.perform(post("/api/defect-catalog").contentType("application/json").content(json))
@@ -88,15 +88,15 @@ class DefectCatalogTests {
 
     @Test void classificationsKeepHistoricalCodesWhenCatalogueChanges() {
         Item first = item("first", "REWORK", "NOK", "REWORK");
-        rule(1, "Díra", "REWORK", null, "1.1.1");
-        rule(2, "Kontaminace", "NOK", null, "2.1.1");
-        rule(3, "chybějící svár", "REWORK", null, "3.1.1");
+        rule(1, "Díra", null, "1.1.1");
+        rule(2, "Kontaminace", null, "2.1.1");
+        rule(3, "chybějící svár", null, "3.1.1");
         defect(first, "ST1", "Díra"); defect(first, "ST2", " Kontaminace "); defect(first, "ST3", "CHYBĚJÍCÍ SVÁR");
         ItemPriorityDto original = read(first.getId()).getPriority();
         assertThat(original.getCatalogStatus()).isEqualTo("CLASSIFIED");
         assertThat(original.getStation()).isEqualTo(2);
         assertThat(original.getCode()).isEqualTo("2.1.1");
-        rule(2, "Kontaminace", "NOK", null, "CUSTOMER-2");
+        rule(2, "Kontaminace", null, "CUSTOMER-2");
         ItemPriorityDto again = read(first.getId()).getPriority();
         assertThat(again.getCode()).isEqualTo("2.1.1");
         assertThat(again.getSnapshotId()).isEqualTo(original.getSnapshotId());
@@ -111,27 +111,38 @@ class DefectCatalogTests {
     @Test void unresolvedStationTiesRequireExplicitPriorities() {
         Item item = item("tie", "REWORK", "REWORK", "OK");
         defect(item, "ST1", "Díra"); defect(item, "ST1", "Kontaminace"); defect(item, "ST2", "Díra");
-        rule(1, "Díra", "REWORK", null, "A"); rule(1, "Kontaminace", "REWORK", null, "B");
-        rule(2, "Díra", "REWORK", 999, "C");
+        rule(1, "Díra", null, "A"); rule(1, "Kontaminace", null, "B");
+        rule(2, "Díra", 999, "C");
         assertThat(read(item.getId()).getPriority().getCatalogStatus()).isEqualTo("AMBIGUOUS_PRIORITY");
         assertThat(snapshots.count()).isZero();
-        rule(1, "Díra", "REWORK", 20, "A"); rule(1, "Kontaminace", "REWORK", 10, "B");
+        rule(1, "Díra", 20, "A"); rule(1, "Kontaminace", 10, "B");
         assertThat(read(item.getId()).getPriority().getCode()).isEqualTo("A");
         assertThat(read(item.getId()).getPriority().getStation()).isEqualTo(1);
     }
 
-    @Test void unknownMappingsAndCameraDisagreementDoNotCreateSnapshots() {
+    @Test void unknownMappingsDoNotCreateSnapshots() {
         Item item = item("unmapped", "NOK", "OK", "OK"); defect(item, "ST1", "Díra");
         assertThat(read(item.getId()).getPriority().getCatalogStatus()).isEqualTo("UNMAPPED");
-        rule(1, "Díra", "REWORK", null, "A");
-        assertThat(read(item.getId()).getPriority().getCatalogStatus()).isEqualTo("INCONSISTENT");
-        assertThat(snapshots.count()).isZero();
+        rule(1, "Díra", null, "A");
+        assertThat(read(item.getId()).getPriority().getCatalogStatus()).isEqualTo("CLASSIFIED");
+        assertThat(read(item.getId()).getPriority().getResult()).isEqualTo("NOK");
+    }
+
+    @Test void sameMappingUsesVisionResultForEachItem() {
+        rule(2, "Díra", null, "HOLE");
+        Item nok = item("vision-nok", "OK", "NOK", "OK"); defect(nok, "ST2", "Díra");
+        Item rework = item("vision-rework", "OK", "REWORK", "OK"); defect(rework, "ST2", "Díra");
+        assertThat(read(nok.getId()).getPriority().getResult()).isEqualTo("NOK");
+        assertThat(read(rework.getId()).getPriority().getResult()).isEqualTo("REWORK");
+        assertThat(read(rework.getId()).getPriority().getCode()).isEqualTo("HOLE");
+        Item invalid = item("vision-ok", "OK", "OK", "OK"); defect(invalid, "ST2", "Díra");
+        assertThat(read(invalid.getId()).getPriority().getCatalogStatus()).isEqualTo("INCONSISTENT");
     }
 
     @Test void oldCodesCannotBeReusedForAnotherMeaning() {
-        rule(1, "Díra", "NOK", null, "A");
-        rule(1, "Díra", "NOK", null, "B");
-        assertThatThrownBy(() -> rule(2, "Kontaminace", "NOK", null, "a"))
+        rule(1, "Díra", null, "A");
+        rule(1, "Díra", null, "B");
+        assertThatThrownBy(() -> rule(2, "Kontaminace", null, "a"))
                 .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
     }
 
@@ -144,10 +155,10 @@ class DefectCatalogTests {
         order.setRef("REF"); order.setLineType("LINE"); order.setOrderBeginDate(Instant.now());
         orderRepository.saveAndFlush(order);
         Item item = item("export", "OK", "NOK", "OK"); defect(item, "ST2", "Kontaminace");
-        rule(2, "Kontaminace", "NOK", null, "ORIGINAL");
+        rule(2, "Kontaminace", null, "ORIGINAL");
         String first = new String(csv.export(order.getId()), java.nio.charset.StandardCharsets.UTF_8);
         assertThat(first).contains("\"ORIGINAL\"", "\"CLASSIFIED\"");
-        rule(2, "Kontaminace", "NOK", null, "REPLACEMENT");
+        rule(2, "Kontaminace", null, "REPLACEMENT");
         String again = new String(csv.export(order.getId()), java.nio.charset.StandardCharsets.UTF_8);
         assertThat(again).contains("\"ORIGINAL\"").doesNotContain("\"REPLACEMENT\"");
         assertThat(snapshots.count()).isEqualTo(1);
@@ -155,10 +166,10 @@ class DefectCatalogTests {
 
     @Test void changingSourceResultsAppendsClassificationHistory() {
         Item item = item("changed", "OK", "NOK", "OK"); defect(item, "ST2", "Kontaminace");
-        rule(2, "Kontaminace", "NOK", null, "NOK-CODE");
+        rule(2, "Kontaminace", null, "NOK-CODE");
         var old = read(item.getId()).getPriority();
         ReflectionTestUtils.setField(item, "station2Result", "REWORK"); items.saveAndFlush(item);
-        rule(2, "Kontaminace", "REWORK", null, "REWORK-CODE");
+        rule(2, "Kontaminace", null, "REWORK-CODE");
         var latest = read(item.getId()).getPriority();
         assertThat(latest.getSnapshotId()).isNotEqualTo(old.getSnapshotId());
         assertThat(latest.getCode()).isEqualTo("REWORK-CODE");
@@ -167,7 +178,7 @@ class DefectCatalogTests {
 
     @Test @WithMockUser(roles = "WORKER")
     void codeFilterClassifiesUnopenedItemsAcrossBatchesBeforeCountingAndPaging() throws Exception {
-        rule(1, "Kontaminace", "NOK", null, "MAIN");
+        rule(1, "Kontaminace", null, "MAIN");
         Order order = new Order(); order.setOrderId(100L); order.setOrderNumber(1L); order.setSku("SKU");
         order.setRef("REF"); order.setLineType("LINE"); order.setOrderBeginDate(Instant.now());
         orderRepository.saveAndFlush(order);
@@ -202,10 +213,10 @@ class DefectCatalogTests {
         Item first = item("automatic-1", "OK", "NOK", "OK"); defect(first, "ST2", "Kontaminace");
         new ItemClassificationJob(indexer).run();
         assertThat(snapshots.count()).isZero();
-        rule(2, "Kontaminace", "NOK", null, "FIRST");
+        rule(2, "Kontaminace", null, "FIRST");
         new ItemClassificationJob(indexer).run();
         assertThat(snapshots.findByItemRecordIdOrderByCreatedAtDesc(first.getId())).hasSize(1);
-        rule(2, "Kontaminace", "NOK", null, "SECOND");
+        rule(2, "Kontaminace", null, "SECOND");
         Item next = item("automatic-2", "OK", "NOK", "OK"); defect(next, "ST2", "Kontaminace");
         new ItemClassificationJob(indexer).run();
         assertThat(snapshots.findByItemRecordIdOrderByCreatedAtDesc(next.getId()).get(0).getCode()).isEqualTo("SECOND");

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Button, Card, Checkbox, Form, Input, InputNumber, Modal, Select, Space, Table, Tag, message } from 'antd';
+import { Alert, Button, Card, Checkbox, Form, Input, InputNumber, Modal, Select, Space, Table, message } from 'antd';
 import apiClient from '../api/client';
 import type { DefectRule } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -45,7 +45,6 @@ const DefectCatalog: React.FC = () => {
         { title: t('catalog.cameraType'), dataIndex: 'cameraType' },
         { title: t('catalog.code'), dataIndex: 'code' },
         { title: t('catalog.descriptionCs'), dataIndex: 'descriptionCs' },
-        { title: t('field.result'), dataIndex: 'severity', render: (value: string) => <Tag color={value === 'NOK' ? 'error' : 'warning'}>{value}</Tag> },
         { title: t('catalog.priority'), dataIndex: 'priority', render: (value: number | null) => value ?? '—' },
         { title: t('catalog.revision'), dataIndex: 'revision' },
         { title: t('catalog.enabled'), dataIndex: 'enabled', render: (enabled: boolean) => t(enabled ? 'common.yes' : 'common.no') },
@@ -80,9 +79,6 @@ const DefectCatalog: React.FC = () => {
                 <Form.Item name="code" label={t('catalog.code')} rules={[{ required: true, whitespace: true }]}><Input maxLength={50} /></Form.Item>
                 <Form.Item name="descriptionCs" label={t('catalog.descriptionCs')} rules={[{ required: true, whitespace: true }]}><Input maxLength={1000} /></Form.Item>
                 <Form.Item name="descriptionEn" label={t('catalog.descriptionEn')}><Input maxLength={1000} /></Form.Item>
-                <Form.Item name="severity" label={t('field.result')} rules={[{ required: true }]}>
-                    <Select options={['NOK', 'REWORK'].map(value => ({ value, label: value }))} />
-                </Form.Item>
                 <Form.Item name="priority" label={t('catalog.priority')} extra={t('catalog.priorityHelp')}><InputNumber min={0} precision={0} /></Form.Item>
                 <Form.Item name="enabled" valuePropName="checked"><Checkbox>{t('catalog.enabled')}</Checkbox></Form.Item>
             </Form>

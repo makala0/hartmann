@@ -59,15 +59,15 @@ public class ItemClassificationService {
             if (matches.isEmpty()) { fallback.setCatalogStatus("UNMAPPED"); continue; }
             Map<Integer, String> stationResults = Map.of(1, normalize(item.getStation1Result()),
                     2, normalize(item.getStation2Result()), 3, normalize(item.getStation3Result()));
-            boolean consistent = true;
+            boolean valid = stationResults.values().stream().allMatch(result -> Set.of("OK", "NOK", "REWORK").contains(result));
+            // A station with observations cannot report OK, and a rejected station needs an observation.
             for (int station = 1; station <= 3; station++) {
                 int number = station;
-                List<String> severities = matches.stream().filter(r -> r.getStation() == number).map(DefectRule::getSeverity).toList();
-                String expected = severities.contains("NOK") ? "NOK" : severities.contains("REWORK") ? "REWORK" : "OK";
-                if (!expected.equals(stationResults.get(station))) consistent = false;
+                boolean hasDefects = matches.stream().anyMatch(rule -> rule.getStation() == number);
+                if (hasDefects == "OK".equals(stationResults.get(station))) valid = false;
             }
-            if (!consistent) { fallback.setCatalogStatus("INCONSISTENT"); continue; }
-            Comparator<DefectRule> base = Comparator.comparingInt((DefectRule r) -> r.getSeverity().equals("NOK") ? 2 : 1)
+            if (!valid) { fallback.setCatalogStatus("INCONSISTENT"); continue; }
+            Comparator<DefectRule> base = Comparator.comparingInt((DefectRule r) -> stationResults.get(r.getStation()).equals("NOK") ? 2 : 1)
                     .thenComparingInt(r -> r.getStation() == 3 ? 3 : r.getStation() == 1 ? 2 : 1);
             DefectRule highest = matches.stream().max(base).orElseThrow();
             List<DefectRule> tied = matches.stream().filter(r -> base.compare(r, highest) == 0).distinct().toList();
@@ -95,7 +95,7 @@ public class ItemClassificationService {
             snapshot.setItemRecordId(item.getId()); snapshot.setSourceHash(fingerprint);
             snapshot.setRuleId(main.getId()); snapshot.setRuleRevision(main.getRevision());
             snapshot.setCode(main.getCode()); snapshot.setDescriptionCs(main.getDescriptionCs());
-            snapshot.setDescriptionEn(main.getDescriptionEn()); snapshot.setResult(main.getSeverity());
+            snapshot.setDescriptionEn(main.getDescriptionEn()); snapshot.setResult(stationResults.get(main.getStation()));
             snapshot.setStation(main.getStation()); snapshot.setCreatedAt(Instant.now());
             snapshot.setObservationsJson(encode(matches));
             item.setPriority(toDto(snapshots.saveAndFlush(snapshot)));

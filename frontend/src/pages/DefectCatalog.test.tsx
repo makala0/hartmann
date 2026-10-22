@@ -33,7 +33,7 @@ jest.mock('antd', () => {
 });
 
 const rule = { id: 1, station: 3, cameraType: 'chybějící svár', code: '3.1.1', revision: 1,
-    descriptionCs: 'Chybějící svár', severity: 'REWORK', enabled: true };
+    descriptionCs: 'Chybějící svár', enabled: true };
 beforeEach(() => {
     jest.clearAllMocks();
     (apiClient.get as jest.Mock).mockResolvedValue({ data: [rule] });

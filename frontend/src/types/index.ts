@@ -176,7 +176,6 @@ export interface DefectRule {
     code: string;
     descriptionCs: string;
     descriptionEn?: string;
-    severity: 'NOK' | 'REWORK';
     priority?: number | null;
     enabled: boolean;
     createdAt: string;

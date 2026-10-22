@@ -17,7 +17,6 @@ public class DefectRule {
     @Column(nullable = false, length = 50) private String code;
     @Column(name = "description_cs", nullable = false, length = 1000) private String descriptionCs;
     @Column(name = "description_en", length = 1000) private String descriptionEn;
-    @Column(nullable = false, length = 10) private String severity;
     private Integer priority;
     @Column(nullable = false) private boolean enabled;
     @Column(name = "created_at", nullable = false) private java.time.Instant createdAt;
