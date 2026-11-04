@@ -69,7 +69,7 @@ class OrderItemPaginationTests {
 
     @Test
     @WithMockUser
-    void sameOrderNumberDoesNotMixItemsCountsCsvOrScans() throws Exception {
+    void sameOrderNumberDoesNotMixItemsCountsOrCsv() throws Exception {
         Order first = createOrder(123L);
         Order second = createOrder(999L);
         second.setOrderNumber(first.getOrderNumber());
@@ -111,12 +111,6 @@ class OrderItemPaginationTests {
         String emptyCsv = mvc.perform(get("/api/dashboard/order/{id}/export.csv", empty.getId()))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertThat(emptyCsv).doesNotContain("first-ok", "first-nok", "second-rework");
-        mvc.perform(get("/api/dashboard/scan/{orderId}", first.getOrderId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.item.itemId").value("first-nok"));
-        mvc.perform(get("/api/dashboard/scan/{orderId}", second.getOrderId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.item.itemId").value("second-rework"));
         var stats = orderService.getDashboardStats(java.util.List.of(first, second, empty), 3);
         assertThat(stats.get("okCount")).isEqualTo(1L);
         assertThat(stats.get("nokCount")).isEqualTo(1L);
@@ -157,6 +151,37 @@ class OrderItemPaginationTests {
                 mvc.perform(get(endpoint).param(field, "missing"))
                         .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
             }
+        }
+    }
+
+    @Test
+    @WithMockUser
+    void scansExactSerialNumberAndUsesInspectionTimeBeforeIdAcrossOrders() throws Exception {
+        Order first = createOrder(123L);
+        Order second = createOrder(999L);
+        createItem(123L, first.getOrderId(), "newest", "NOK");
+        Item newest = items.findByOrderId(first.getOrderId()).get(0);
+        ReflectionTestUtils.setField(newest, "serialNumber", "000SN-42");
+        ReflectionTestUtils.setField(newest, "endInspectionTime", Instant.parse("2026-11-04T12:00:00Z"));
+        createItem(999L, second.getOrderId(), "older-higher-id", "OK");
+        Item older = items.findByOrderId(second.getOrderId()).get(0);
+        ReflectionTestUtils.setField(older, "serialNumber", "000SN-42");
+        ReflectionTestUtils.setField(older, "endInspectionTime", Instant.parse("2026-11-04T11:00:00Z"));
+        items.flush();
+        mvc.perform(get("/api/dashboard/scan").param("serialNumber", "000SN-42"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.item.itemId").value("newest"))
+                .andExpect(jsonPath("$.orderId").value(first.getId().intValue()));
+        // Equal inspection times use the higher database ID as a deterministic tie-break.
+        ReflectionTestUtils.setField(older, "endInspectionTime", newest.getEndInspectionTime());
+        items.flush();
+        mvc.perform(get("/api/dashboard/scan").param("serialNumber", "000SN-42"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.item.itemId").value("older-higher-id"))
+                .andExpect(jsonPath("$.orderId").value(second.getId().intValue()));
+        for (String missing : java.util.List.of("000SN", "SN-42", String.valueOf(first.getOrderId()), " ")) {
+            mvc.perform(get("/api/dashboard/scan").param("serialNumber", missing))
+                    .andExpect(status().isNotFound());
         }
     }
 
