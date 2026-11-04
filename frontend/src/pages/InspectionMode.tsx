@@ -34,16 +34,11 @@ const InspectionMode: React.FC = () => {
             return;
         }
 
-        if (!/^\d+$/.test(normalizedCode)) {
-            message.error(`${t('inspection.invalidCode')}: ${normalizedCode}`);
-            return;
-        }
-
         loadingRef.current = true;
         setLoading(true);
 
         try {
-            const response = await apiClient.get<{ orderId: number; item: Item }>(`/dashboard/scan/${normalizedCode}`);
+            const response = await apiClient.get<{ orderId: number; item: Item }>('/dashboard/scan', { params: { serialNumber: normalizedCode } });
             setSelectedItem(response.data.item);
             message.success(`${t('inspection.loaded')} ${response.data.item.itemId}`);
         } catch (error) {
