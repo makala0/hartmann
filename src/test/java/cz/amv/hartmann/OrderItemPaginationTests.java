@@ -170,19 +170,32 @@ class OrderItemPaginationTests {
         items.flush();
         mvc.perform(get("/api/dashboard/scan").param("serialNumber", "000SN-42"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.item.itemId").value("newest"))
-                .andExpect(jsonPath("$.orderId").value(first.getId().intValue()));
+                .andExpect(jsonPath("$.itemId").value("newest"))
+                .andExpect(jsonPath("$.orderId").value(first.getOrderId().intValue()));
         // Equal inspection times use the higher database ID as a deterministic tie-break.
         ReflectionTestUtils.setField(older, "endInspectionTime", newest.getEndInspectionTime());
         items.flush();
         mvc.perform(get("/api/dashboard/scan").param("serialNumber", "000SN-42"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.item.itemId").value("older-higher-id"))
-                .andExpect(jsonPath("$.orderId").value(second.getId().intValue()));
+                .andExpect(jsonPath("$.itemId").value("older-higher-id"))
+                .andExpect(jsonPath("$.orderId").value(second.getOrderId().intValue()));
         for (String missing : java.util.List.of("000SN", "SN-42", String.valueOf(first.getOrderId()), " ")) {
             mvc.perform(get("/api/dashboard/scan").param("serialNumber", missing))
                     .andExpect(status().isNotFound());
         }
+    }
+
+    @Test
+    @WithMockUser
+    void scansItemWithoutAnExistingOrder() throws Exception {
+        createItem(777L, 999999L, "orphan-item", "OK");
+        Item item = items.findByOrderId(999999L).get(0);
+        ReflectionTestUtils.setField(item, "serialNumber", "ORPHAN-001");
+        items.flush();
+        mvc.perform(get("/api/dashboard/scan").param("serialNumber", "ORPHAN-001"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.itemId").value("orphan-item"))
+                .andExpect(jsonPath("$.orderId").value(999999L));
     }
 
     private Order createOrder(long number) {

@@ -38,9 +38,9 @@ const InspectionMode: React.FC = () => {
         setLoading(true);
 
         try {
-            const response = await apiClient.get<{ orderId: number; item: Item }>('/dashboard/scan', { params: { serialNumber: normalizedCode } });
-            setSelectedItem(response.data.item);
-            message.success(`${t('inspection.loaded')} ${response.data.item.itemId}`);
+            const response = await apiClient.get<Item>('/dashboard/scan', { params: { serialNumber: normalizedCode } });
+            setSelectedItem(response.data);
+            message.success(`${t('inspection.loaded')} ${response.data.itemId}`);
         } catch (error) {
             console.error('Failed to load scanned item:', error);
             message.error(t('inspection.notFound', { code: normalizedCode }));
