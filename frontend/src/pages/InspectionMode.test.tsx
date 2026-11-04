@@ -13,7 +13,7 @@ jest.mock('antd', () => {
 });
 
 test('scans the full serial number including leading zeros and nonnumeric characters', async () => {
-    (apiClient.get as jest.Mock).mockResolvedValue({ data: { item: { itemId: 'found-item' } } });
+    (apiClient.get as jest.Mock).mockResolvedValue({ data: { itemId: 'found-item' } });
     render(<InspectionMode />);
     for (const key of '000SN-42') fireEvent.keyDown(window, { key });
     fireEvent.keyDown(window, { key: 'Enter' });

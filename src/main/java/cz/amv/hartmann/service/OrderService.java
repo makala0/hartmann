@@ -167,19 +167,13 @@ public class OrderService {
         };
     }
 
-    public Map<String, Object> findScannedItem(String serialNumber) {
+    public ItemDto findScannedItem(String serialNumber) {
         if (serialNumber == null || serialNumber.isBlank()) {
             throw new IllegalArgumentException("Sériové číslo nesmí být prázdné");
         }
         Item item = itemRepository.findFirstBySerialNumberOrderByEndInspectionTimeDescIdDesc(serialNumber.trim())
                 .orElseThrow(() -> new RuntimeException("Kus nenalezen pro sériové číslo: " + serialNumber));
-        Order order = orderRepository.findByOrderId(item.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Objednávka nenalezena pro kus: " + item.getItemId()));
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("orderId", order.getId());
-        result.put("item", convertToDtoWithDefects(item));
-        return result;
+        return convertToDtoWithDefects(item);
     }
 
     public OrderDetailDto getOrderDetail(Long orderId) {
