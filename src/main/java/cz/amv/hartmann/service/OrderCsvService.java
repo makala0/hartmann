@@ -31,7 +31,7 @@ public class OrderCsvService {
         row(csv, "ID zakázky", "Číslo zakázky", "SKU zakázky", "Ref zakázky", "Typ linky",
                 "Receptura", "Zahájení zakázky (UTC)", "Komentář zakázky", "Item ID", "Sériové číslo",
                 "Čas kontroly (UTC)", "SKU kusu", "Ref kusu", "Kamera", "Typ vady", "Celkový výsledek",
-                "Výsledek stanice 1", "Výsledek stanice 2", "Výsledek stanice 3", "Varování", "Kritická");
+                "Výsledek stanice 1", "Výsledek stanice 2", "Výsledek stanice 3", "Varování", "Kritická", "Komentář kusu");
         if (items.isEmpty()) {
             appendItem(csv, order, null);
         } else {
@@ -50,7 +50,8 @@ public class OrderCsvService {
                 item == null ? null : item.getStation1Result(), item == null ? null : item.getStation2Result(),
                 item == null ? null : item.getStation3Result(),
                 item == null ? null : Boolean.TRUE.equals(item.getAttentionFlag()) ? "Ano" : "Ne",
-                item == null ? null : Boolean.TRUE.equals(item.getCriticalFlag()) ? "Ano" : "Ne");
+                item == null ? null : Boolean.TRUE.equals(item.getCriticalFlag()) ? "Ano" : "Ne",
+                item == null ? null : item.getComment());
     }
 
     private void row(StringBuilder csv, Object... values) {

@@ -50,6 +50,10 @@ class OrderCsvExportTests {
         orders.saveAndFlush(order);
         for (int i = 0; i < 25; i++) createItem(123L, "kus-" + i);
         createItem(999L, "cizí-kus");
+        var exportedItems = items.findByOrderIdOrderByIdAsc(order.getOrderId());
+        exportedItems.get(0).setComment("Vada; \"poznámka\"\r\ndruhý řádek");
+        exportedItems.get(1).setComment("=HYPERLINK(\"example\")");
+        items.flush();
 
         byte[] bytes = mvc.perform(get("/api/dashboard/order/{id}/export.csv", order.getId())
                         .param("page", "1").param("size", "1").param("totalResult", "NOK"))
@@ -64,6 +68,9 @@ class OrderCsvExportTests {
         assertThat(csv).contains("\"'=1+1\"").doesNotContain("cizí-kus");
         for (int i = 0; i < 25; i++) assertThat(csv).containsOnlyOnce("\"kus-" + i + "\"");
         assertThat(csv).contains("\"2026-10-20T10:00:00Z\"");
+        assertThat(csv.split("\r\n", 2)[0]).endsWith(";\"Komentář kusu\"");
+        assertThat(csv).contains("\"Vada; \"\"poznámka\"\"\r\ndruhý řádek\"");
+        assertThat(csv).contains("\"'=HYPERLINK(\"\"example\"\")\"");
     }
 
     @Test
@@ -74,7 +81,7 @@ class OrderCsvExportTests {
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertThat(csv.split("\r\n")).hasSize(2);
         assertThat(csv).contains("\"456\"").doesNotContain("null");
-        assertThat(csv.split("\r\n")[1].split(";", -1)).hasSize(21);
+        assertThat(csv.split("\r\n")[1].split(";", -1)).hasSize(22);
     }
 
     private Order createOrder(long number) {
